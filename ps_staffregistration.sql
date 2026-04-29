@@ -1,0 +1,14 @@
+-- Table definition for ps_staffregistration
+
+CREATE TABLE IF NOT EXISTS ps_staffregistration (
+    TableID INT AUTO_INCREMENT PRIMARY KEY,
+    FullName VARCHAR(255) NOT NULL,
+    Email VARCHAR(255) NOT NULL UNIQUE,
+    EmpCode VARCHAR(100) NOT NULL UNIQUE,
+    PIN VARCHAR(255) NOT NULL,
+    Status ENUM('1', '0') DEFAULT '1',
+    CreatedBy VARCHAR(255),
+    CreationDateTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ModifiedBy VARCHAR(255),
+    ModificationDateTime DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
