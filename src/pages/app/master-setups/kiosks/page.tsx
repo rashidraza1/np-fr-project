@@ -938,7 +938,7 @@ export default function Page() {
                         <Box className="flex flex-col gap-3">
 
                             {(() => {
-                                const coinData = inventoryData[1] || { cashBox: 0, recycleCount: 0, totalNote: 0, amount: 0 };
+                                const coinData = inventoryData[1] || { cashBox: 0, coinCount: 0, recycleCount: 0, totalNote: 0, amount: 0, coinCountAmount: 0 };
                                 return (
                                     <Box className="flex items-center justify-between p-1 bg-white border border-red-100 rounded-xl shadow-sm mt-2">
                                         <Box className="flex items-center gap-4 w-1/4">
@@ -960,12 +960,12 @@ export default function Page() {
                                         <Box className="flex flex-1 justify-center text-center">
                                             <Box>
                                                 <Typography variant="caption" className="text-orange-600 font-semibold block uppercase tracking-tight">Available Coin</Typography>
-                                                <Typography variant="h6" className="font-bold text-gray-800">{coinData.cashBox}</Typography>
+                                                <Typography variant="h6" className="font-bold text-gray-800">{coinData.coinCount}</Typography>
                                             </Box>
                                         </Box>
                                         <Box className="w-1/4 text-right">
                                             <Typography variant="caption" className="text-teal-600 font-semibold block uppercase tracking-tight">Total Value</Typography>
-                                            <Typography variant="h5" className="font-black text-slate-900">Đ {coinData.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Typography>
+                                            <Typography variant="h5" className="font-black text-slate-900">Đ {coinData.coinCountAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Typography>
                                         </Box>
                                     </Box>
                                 );

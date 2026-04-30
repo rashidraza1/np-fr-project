@@ -400,118 +400,123 @@ export default function StaffActionPage() {
               <Grid size={12}>
                 <Box className="bg-white flex w-full flex-col items-start gap-4 rounded-2xl p-4 shadow-sm">
                   <Typography variant="h6" className="text-text-primary px-2">Staff Action Search</Typography>
-                  <Box className="flex w-full flex-col gap-3">
-                    {/* First Grid: Filters */}
-                    <Box className="flex w-full flex-row items-center gap-3">
-                      <FormControl variant="outlined" size="medium" className="flex-1">
-                        <InputLabel>Log Type</InputLabel>
-                        <Select
-                          label="Log Type"
-                          value={filterLogType}
-                          onChange={(e) => setFilterLogType(e.target.value)}
-                          IconComponent={NiChevronDownSmall}
-                        >
-                          <MenuItem value="">All</MenuItem>
-                          <MenuItem value="1">Note Filling</MenuItem>
-                          <MenuItem value="2">Coin Filling</MenuItem>
-                          <MenuItem value="3">Coin Payout</MenuItem>
-                          <MenuItem value="4">Empty Payout</MenuItem>
-                          <MenuItem value="5">Cash Box Replacement</MenuItem>
-                        </Select>
-                      </FormControl>
-
-                      <Autocomplete
-                        className="flex-1"
-                        options={staffList}
-                        getOptionLabel={(option) => `${option.FullName} (${option.EmpCode})`}
-                        value={staffList.find(s => s.id === filterStaff) || null}
-                        onChange={(_, newValue) => setFilterStaff(newValue ? newValue.id : "")}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Staff"
-                            variant="outlined"
-                            size="medium"
-                            fullWidth
-                          />
-                        )}
-                        isOptionEqualToValue={(option, value) => option.id === value.id}
-                      />
-
-                      <Box className="flex flex-1 flex-row items-center gap-2">
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                          <DatePicker
-                            label="Start Date"
-                            value={startDate}
-                            onChange={(newValue) => setStartDate(newValue)}
-                            slotProps={{
-                              textField: {
-                                size: 'medium',
-                                fullWidth: true
-                              }
-                            }}
-                          />
-                          <DatePicker
-                            label="End Date"
-                            value={endDate}
-                            onChange={(newValue) => setEndDate(newValue)}
-                            slotProps={{
-                              textField: {
-                                size: 'medium',
-                                fullWidth: true
-                              }
-                            }}
-                          />
-                        </LocalizationProvider>
-                        <IconButton onClick={() => { setStartDate(null); setEndDate(null); }} size="small">
-                          <NiCross size="medium" className="text-text-disabled" />
-                        </IconButton>
-                      </Box>
-                    </Box>
-
-                    {/* Second Grid: Actions */}
-                    <Box className="flex w-full flex-row items-center justify-end gap-3">
-                      <Button
-                        size="medium"
-                        color="primary"
-                        variant="contained"
-                        className="w-50 h-[48px]"
-                        startIcon={<NiSearch />}
-                        onClick={handleSearch}
-                        disabled={loading}
+                  <Box className="flex w-full flex-row items-center gap-2">
+                    <FormControl variant="outlined" size="medium" className="mb-0 w-60">
+                      <InputLabel>Log Type</InputLabel>
+                      <Select
+                        label="Log Type"
+                        value={filterLogType}
+                        onChange={(e) => setFilterLogType(e.target.value)}
+                        IconComponent={NiChevronDownSmall}
                       >
-                        {loading ? "Searching..." : "Search"}
-                      </Button>
+                        <MenuItem value="">All</MenuItem>
+                        <MenuItem value="1">Note Filling</MenuItem>
+                        <MenuItem value="2">Coin Filling</MenuItem>
+                        <MenuItem value="3">Coin Payout</MenuItem>
+                        <MenuItem value="4">Empty Payout</MenuItem>
+                        <MenuItem value="5">Cash Box Replacement</MenuItem>
+                      </Select>
+                    </FormControl>
 
-                      {visibleRows.length > 0 && (
-                        <Box className="flex flex-row items-center gap-2">
-                          <Tooltip title="Export to Excel">
-                            <Button
-                              size="medium"
-                              color="error"
-                              variant="contained"
-                              className="w-40 h-[48px]"
-                              startIcon={<NiDocumentChart size={"medium"} />}
-                              onClick={handleExportExcel}
-                            >
-                              Export Excel
-                            </Button>
-                          </Tooltip>
-                          <Tooltip title="Export to PDF">
-                            <Button
-                              size="medium"
-                              color="warning"
-                              variant="contained"
-                              className="w-40 h-[48px]"
-                              startIcon={<NiDocumentFull size={"medium"} />}
-                              onClick={handleExportPDF}
-                            >
-                              Export PDF
-                            </Button>
-                          </Tooltip>
-                        </Box>
+                    <Autocomplete
+                      options={staffList}
+                      getOptionLabel={(option) => `${option.FullName} (${option.EmpCode})`}
+                      value={staffList.find(s => s.id === filterStaff) || null}
+                      onChange={(_, newValue) => setFilterStaff(newValue ? newValue.id : "")}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Staff"
+                          variant="outlined"
+                          size="medium"
+                          className="mb-0 w-60"
+                        />
                       )}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                    />
+
+                    <Box className="flex flex-row items-center gap-1">
+                      <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <DatePicker
+                          label="Start Date"
+                          value={startDate}
+                          onChange={(newValue) => setStartDate(newValue)}
+                          slotProps={{
+                            textField: {
+                              size: 'medium',
+                              sx: { width: 150 }
+                            }
+                          }}
+                        />
+                        <DatePicker
+                          label="End Date"
+                          value={endDate}
+                          onChange={(newValue) => setEndDate(newValue)}
+                          slotProps={{
+                            textField: {
+                              size: 'medium',
+                              sx: { width: 150 }
+                            }
+                          }}
+                        />
+                      </LocalizationProvider>
+                      <IconButton onClick={() => { setStartDate(null); setEndDate(null); }} size="small">
+                        <NiCross size="medium" className="text-text-disabled" />
+                      </IconButton>
                     </Box>
+
+                    <Button
+                      size="medium"
+                      color="primary"
+                      variant="contained"
+                      className="w-32 h-[48px]"
+                      startIcon={<NiSearch />}
+                      onClick={handleSearch}
+                      disabled={loading}
+                    >
+                      {loading ? "Searching..." : "Search"}
+                    </Button>
+
+                    {/* <Button
+                      size="medium"
+                      color="grey"
+                      variant="pastel"
+                      className="w-32 h-[48px]"
+                      startIcon={<NiCross />}
+                      onClick={handleReset}
+                      disabled={loading}
+                    >
+                      Reset
+                    </Button> */}
+
+                    {visibleRows.length > 0 && (
+                      <Box className="flex flex-row items-center gap-2 ml-auto">
+                        <Tooltip title="Export to Excel">
+                          <Button
+                            size="medium"
+                            color="error"
+                            variant="contained"
+                            className="w-25 h-[48px]"
+                            startIcon={<NiDocumentChart size={"medium"} />}
+                            onClick={handleExportExcel}
+                          >
+                            Excel
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Export to PDF">
+                          <Button
+                            size="medium"
+                            color="warning"
+                            variant="contained"
+                            className="w-25 h-[48px]"
+                            startIcon={<NiDocumentFull size={"medium"} />}
+                            onClick={handleExportPDF}
+                          >
+                            PDF
+                          </Button>
+                        </Tooltip>
+                      </Box>
+                    )}
                   </Box>
                 </Box>
               </Grid>

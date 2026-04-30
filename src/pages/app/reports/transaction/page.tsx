@@ -81,6 +81,12 @@ interface MasterRecord {
   TitleEnglish: string;
 }
 
+interface CashDetail {
+  Denomination: number;
+  Count: number;
+  Amount: number;
+}
+
 interface TransactionRow {
   id: number;
   TableID: number;
@@ -95,7 +101,11 @@ interface TransactionRow {
   TotalAmountDue: number;
   salesOrders: SalesOrder[];
   payments: Payment[];
+  cashTransactions?: CashDetail[];
+  cashPayouts?: CashDetail[];
 }
+
+const DENOMINATIONS = [1000, 500, 200, 100, 50, 20, 10, 5, 1];
 
 export default function TransactionReportPage() {
   const { canRead } = usePermission("Transaction List");
@@ -114,6 +124,11 @@ export default function TransactionReportPage() {
   const [branchId, setBranchId] = useState("All");
   const [kioskId, setKioskId] = useState("All");
   const [isTableVisible, setIsTableVisible] = useState(false);
+
+  // Cash Sections state
+  const [cashTransactions, setCashTransactions] = useState<Record<number, number>>({});
+  const [cashPayouts, setCashPayouts] = useState<Record<number, number>>({});
+
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 10,
     page: 0,
@@ -213,6 +228,30 @@ export default function TransactionReportPage() {
     const transaction = visibleRows.find((row) => row.id === id);
     if (transaction) {
       setSelectedTransaction(transaction);
+      
+      // Initialize with zeros
+      const initialTransactions = DENOMINATIONS.reduce((acc, d) => ({ ...acc, [d]: 0 }), {} as Record<number, number>);
+      const initialPayouts = DENOMINATIONS.reduce((acc, d) => ({ ...acc, [d]: 0 }), {} as Record<number, number>);
+
+      // Fill from API data if exists
+      if (transaction.cashTransactions) {
+        transaction.cashTransactions.forEach(item => {
+          if (initialTransactions.hasOwnProperty(item.Denomination)) {
+            initialTransactions[item.Denomination] = item.Count;
+          }
+        });
+      }
+      
+      if (transaction.cashPayouts) {
+        transaction.cashPayouts.forEach(item => {
+          if (initialPayouts.hasOwnProperty(item.Denomination)) {
+            initialPayouts[item.Denomination] = item.Count;
+          }
+        });
+      }
+
+      setCashTransactions(initialTransactions);
+      setCashPayouts(initialPayouts);
       setOpenModal(true);
     }
   };
@@ -758,7 +797,105 @@ export default function TransactionReportPage() {
                 </Box>
 
 
-                {/* 3) Transaction Details Section */}
+                {/* 2) Cash Transaction Section */}
+                <Box className="px-6 py-4 bg-white border-b border-divider">
+                  <Box className="flex items-center gap-2 mb-4">
+                    <NiDocumentChart size="medium" className="text-primary" />
+                    <Typography variant="h6" className="font-bold text-text-primary">
+                      Cash Transaction
+                    </Typography>
+                  </Box>
+                  <Box className="border border-divider rounded-xl overflow-hidden shadow-tiny">
+                    <table className="w-full text-left text-sm border-collapse">
+                      <thead className="surface-secondary font-bold text-text-secondary uppercase text-[10px] tracking-wider">
+                        <tr>
+                          <th className="px-4 py-3 border-b border-divider">S.No</th>
+                          <th className="px-4 py-3 border-b border-divider">Currency</th>
+                          <th className="px-4 py-3 border-b border-divider">Count</th>
+                          <th className="px-4 py-3 border-b border-divider text-right">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white">
+                        {DENOMINATIONS.map((denom, idx) => (
+                          <tr key={denom} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-4 py-3 border-b border-divider/50">{idx + 1}</td>
+                            <td className="px-4 py-3 border-b border-divider/50 font-medium">{denom} AED</td>
+                            <td className="px-4 py-3 border-b border-divider/50">
+                              <Typography variant="body2" className="text-gray-800 font-medium">
+                                {cashTransactions[denom] || 0}
+                              </Typography>
+                            </td>
+                            <td className="px-4 py-3 border-b border-divider/50 text-right font-semibold">
+                              AED {(cashTransactions[denom] || 0) * denom}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="surface-secondary">
+                        <tr className="font-bold">
+                          <td colSpan={2} className="px-4 py-3 text-right text-text-secondary font-bold uppercase text-[10px]">Grand Total</td>
+                          <td className="px-4 py-3 text-primary text-base">
+                            {Object.values(cashTransactions).reduce((a, b) => a + b, 0)}
+                          </td>
+                          <td className="px-4 py-3 text-right text-primary text-base">
+                            AED {DENOMINATIONS.reduce((acc, d) => acc + (cashTransactions[d] || 0) * d, 0).toLocaleString()}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </Box>
+                </Box>
+
+                {/* 3) Cash Payout Section */}
+                <Box className="px-6 py-4 bg-white border-b border-divider">
+                  <Box className="flex items-center gap-2 mb-4">
+                    <NiArrowInDown size="medium" className="text-primary" />
+                    <Typography variant="h6" className="font-bold text-text-primary">
+                      Cash Payout
+                    </Typography>
+                  </Box>
+                  <Box className="border border-divider rounded-xl overflow-hidden shadow-tiny">
+                    <table className="w-full text-left text-sm border-collapse">
+                      <thead className="surface-secondary font-bold text-text-secondary uppercase text-[10px] tracking-wider">
+                        <tr>
+                          <th className="px-4 py-3 border-b border-divider">S.No</th>
+                          <th className="px-4 py-3 border-b border-divider">Currency</th>
+                          <th className="px-4 py-3 border-b border-divider">Count</th>
+                          <th className="px-4 py-3 border-b border-divider text-right">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white">
+                        {DENOMINATIONS.map((denom, idx) => (
+                          <tr key={denom} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-4 py-3 border-b border-divider/50">{idx + 1}</td>
+                            <td className="px-4 py-3 border-b border-divider/50 font-medium">{denom} AED</td>
+                            <td className="px-4 py-3 border-b border-divider/50">
+                              <Typography variant="body2" className="text-gray-800 font-medium">
+                                {cashPayouts[denom] || 0}
+                              </Typography>
+                            </td>
+                            <td className="px-4 py-3 border-b border-divider/50 text-right font-semibold">
+                              AED {(cashPayouts[denom] || 0) * denom}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="surface-secondary">
+                        <tr className="font-bold">
+                          <td colSpan={2} className="px-4 py-3 text-right text-text-secondary font-bold uppercase text-[10px]">Grand Total</td>
+                          <td className="px-4 py-3 text-primary text-base">
+                            {Object.values(cashPayouts).reduce((a, b) => a + b, 0)}
+                          </td>
+                          <td className="px-4 py-3 text-right text-primary text-base">
+                            AED {DENOMINATIONS.reduce((acc, d) => acc + (cashPayouts[d] || 0) * d, 0).toLocaleString()}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </Box>
+                </Box>
+
+                {/* 4) Payment Details Section */}
                 <Box className="px-6 py-4 bg-white">
                   <Box className="flex items-center gap-2 mb-4">
                     <NiPrinter size="medium" className="text-primary" />
