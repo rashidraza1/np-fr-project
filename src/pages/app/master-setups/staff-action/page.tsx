@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jsPDF';
+import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 import {
@@ -27,8 +27,6 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  Divider,
   CircularProgress,
   Autocomplete,
   TextField,
@@ -62,8 +60,7 @@ import NiDocumentChart from "@/icons/nexture/ni-document-chart";
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import dayjs, { Dayjs } from 'dayjs';
-import { cn } from "@/lib/utils";
+import { Dayjs } from 'dayjs';
 
 type Row = {
   id: number;
@@ -72,6 +69,7 @@ type Row = {
   logType: string;
   staffName: string;
   dateTime: string;
+  amount: number;
 }
 
 const LOG_TYPE_MAP: Record<string, string> = {
@@ -80,6 +78,28 @@ const LOG_TYPE_MAP: Record<string, string> = {
   '3': 'Coin Payout',
   '4': 'Empty Payout',
   '5': 'Cash Box Replacement'
+};
+
+const formatDateTime = (dateString: string) => {
+  if (!dateString) return "";
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return dateString;
+
+  const day = d.getDate();
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const month = monthNames[d.getMonth()];
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+
+  const getOrdinal = (n: number) => {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return s[(v - 20) % 10] || s[v] || s[0];
+  };
+
+  return `${day}${getOrdinal(day)} ${month} ${year} ${hours}:${minutes}:${seconds}`;
 };
 
 export default function StaffActionPage() {
@@ -136,6 +156,7 @@ export default function StaffActionPage() {
           logType: String(item.LogType),
           staffName: item.StaffName,
           dateTime: item.DateTime,
+          amount: Number(item.TotalAmount || 0),
         })));
         setIsTableVisible(true);
       } else {
@@ -157,12 +178,7 @@ export default function StaffActionPage() {
     fetchLogs();
   };
 
-  const handleReset = () => {
-    setFilterLogType("");
-    setFilterStaff("");
-    setStartDate(null);
-    setEndDate(null);
-  };
+
 
   const handleOpenDetails = async (row: Row) => {
     setSelectedRow(row);
@@ -194,12 +210,13 @@ export default function StaffActionPage() {
   }, []);
 
   const columns: GridColDef<Row>[] = [
-    { field: "sNo", headerName: "S.No", width: 70 },
+    { field: "sNo", headerName: "S.No", width: 70, align: "center", headerAlign: "center" },
     {
       field: "kioskName",
-      headerName: "Kiosk Name",
+      headerName: "Payment Machine",
       flex: 1,
       minWidth: 150,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams) => (
         <Box className="flex h-full items-center">
           <Typography variant="body2" className="text-text-primary">
@@ -210,8 +227,10 @@ export default function StaffActionPage() {
     },
     {
       field: "logType",
-      headerName: "Log Type",
+      headerName: "Operation",
       width: 200,
+      align: "center",
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams) => {
         const type = params.value;
         let color: "primary" | "secondary" | "success" | "error" | "warning" | "info" = "primary";
@@ -229,9 +248,10 @@ export default function StaffActionPage() {
     },
     {
       field: "staffName",
-      headerName: "Staff Name",
+      headerName: "Staff",
       flex: 1,
       minWidth: 150,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams) => (
         <Box className="flex h-full items-center">
           <Typography variant="body2" className="text-text-primary">
@@ -243,11 +263,26 @@ export default function StaffActionPage() {
     {
       field: "dateTime",
       headerName: "DateTime",
-      width: 180,
+      width: 220,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams) => (
         <Box className="flex h-full items-center">
           <Typography variant="body2" className="text-text-primary">
-            {params.value}
+            {formatDateTime(params.value)}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: "amount",
+      headerName: "Amount Managed",
+      width: 150,
+      align: "center",
+      headerAlign: "center",
+      renderCell: (params: GridRenderCellParams) => (
+        <Box className="flex h-full items-center justify-center">
+          <Typography variant="body2" className="font-black text-green-500">
+            Đ {Number(params.value).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </Typography>
         </Box>
       ),
@@ -256,10 +291,10 @@ export default function StaffActionPage() {
       field: "actions",
       headerName: "Details",
       width: 100,
-      align: "center",
+      align: "left",
       headerAlign: "center",
       renderCell: (params: GridRenderCellParams) => (
-        <Box className="flex h-full items-center justify-center">
+        <Box className="flex h-full items-center justify-start">
           <Tooltip title="View Details">
             <IconButton size="small" onClick={() => handleOpenDetails(params.row)}>
               <NiEyeOpen size="medium" />
@@ -277,15 +312,16 @@ export default function StaffActionPage() {
     }
     const dataToExport = visibleRows.map(row => ({
       "S.No": row.sNo,
-      "Kiosk Name": row.kioskName,
-      "Log Type": row.logType,
-      "Staff Name": row.staffName,
-      "DateTime": row.dateTime,
+      "Payment Machine": row.kioskName,
+      "Operation": LOG_TYPE_MAP[row.logType] || row.logType,
+      "Staff": row.staffName,
+      "DateTime": formatDateTime(row.dateTime),
+      "Amount Managed": row.amount,
     }));
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Staff_Actions");
-    XLSX.writeFile(workbook, "Staff_Actions_Report.xlsx");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Maintenance_Logs");
+    XLSX.writeFile(workbook, "Maintenance_Logs_Report.xlsx");
     toast.success("Excel exported successfully");
   };
 
@@ -295,21 +331,22 @@ export default function StaffActionPage() {
       return;
     }
     const doc = new jsPDF();
-    const tableColumn = ["S.No", "Kiosk", "Log Type", "Staff", "DateTime"];
+    const tableColumn = ["S.No", "Payment Machine", "Operation", "Staff", "DateTime", "Amount Managed"];
     const tableRows = visibleRows.map(row => [
       row.sNo,
       row.kioskName,
-      row.logType,
+      LOG_TYPE_MAP[row.logType] || row.logType,
       row.staffName,
-      row.dateTime,
+      formatDateTime(row.dateTime),
+      `Đ ${row.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
     ]);
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 20,
     });
-    doc.text("Staff Action Report", 14, 15);
-    doc.save("Staff_Actions_Report.pdf");
+    doc.text("Maintenance Logs Report", 14, 15);
+    doc.save("Maintenance_Logs_Report.pdf");
     toast.success("PDF exported successfully");
   };
 
@@ -382,7 +419,7 @@ export default function StaffActionPage() {
             <Grid container spacing={2.5} className="w-full" size={12}>
               <Grid size={{ xs: 12, md: "grow" }}>
                 <Typography variant="h1" component="h1" className="mb-0">
-                  Staff Action
+                  Maintenance Logs
                 </Typography>
                 <Breadcrumbs>
                   <Link color="inherit" to="/dashboard">
@@ -391,7 +428,7 @@ export default function StaffActionPage() {
                   <Link color="inherit" to="/pages">
                     Master Setups
                   </Link>
-                  <Typography variant="body2">Staff Action</Typography>
+                  <Typography variant="body2">Maintenance Logs</Typography>
                 </Breadcrumbs>
               </Grid>
             </Grid>
@@ -399,14 +436,14 @@ export default function StaffActionPage() {
             <Grid container spacing={5} className="w-full" size={12}>
               <Grid size={12}>
                 <Box className="bg-white flex w-full flex-col items-start gap-4 rounded-2xl p-4 shadow-sm">
-                  <Typography variant="h6" className="text-text-primary px-2">Staff Action Search</Typography>
+                  <Typography variant="h6" className="text-text-primary px-2">Maintenance Logs Search</Typography>
                   <Box className="flex w-full flex-col gap-3">
                     {/* First Grid: Filters */}
                     <Box className="flex w-full flex-row items-center gap-3">
                       <FormControl variant="outlined" size="medium" className="flex-1">
-                        <InputLabel>Log Type</InputLabel>
+                        <InputLabel>Operation</InputLabel>
                         <Select
-                          label="Log Type"
+                          label="Operation"
                           value={filterLogType}
                           onChange={(e) => setFilterLogType(e.target.value)}
                           IconComponent={NiChevronDownSmall}
@@ -537,7 +574,6 @@ export default function StaffActionPage() {
             getRowSpacing={getRowSpacing}
             rowHeight={68}
             columnHeaderHeight={32}
-            checkboxSelection
             disableRowSelectionOnClick
             pageSizeOptions={[10]}
             className="full-page border-none"
@@ -584,8 +620,6 @@ export default function StaffActionPage() {
               moreActionsIcon: () => <NiEllipsisVertical size={"medium"} />,
               toolbar: TableToolbar,
             }}
-            rowSelectionModel={rowSelectionModel}
-            onRowSelectionModelChange={(newModel) => setRowSelectionModel(newModel)}
             hideFooterSelectedRowCount
             showToolbar
           />
@@ -602,7 +636,7 @@ export default function StaffActionPage() {
       >
         <DialogTitle className="flex justify-between items-center pt-2 pb-2">
           <Box className="flex items-center gap-3">
-            <Typography variant="h6" className="font-bold">Staff Action Details - {selectedRow?.kioskName}</Typography>
+            <Typography variant="h6" className="font-bold">Maintenance Log Details - {selectedRow?.kioskName}</Typography>
             <Typography variant="caption" className="text-gray-300">|</Typography>
             <Typography variant="caption" className="text-gray-500 font-semibold uppercase">{selectedRow?.staffName}</Typography>
             <Typography variant="caption" className="text-gray-300">|</Typography>
@@ -725,7 +759,7 @@ export default function StaffActionPage() {
                 <Box>
                   <Typography variant="caption" className="text-gray-400 block">Total Cashbox</Typography>
                   <Typography variant="body1" className="font-bold">
-                    {Object.values(inventoryData).reduce((acc: any, curr: any) => acc + (curr.cashBox || 0), 0)}
+                    {Object.values(inventoryData).reduce((acc: number, curr: any) => acc + (Number(curr.cashBox) || 0), 0)}
                   </Typography>
                 </Box>
               )}
@@ -733,7 +767,7 @@ export default function StaffActionPage() {
                 <Box>
                   <Typography variant="caption" className="text-gray-400 block">Total Cashbox Replacement</Typography>
                   <Typography variant="body1" className="font-bold">
-                    {Object.values(inventoryData).reduce((acc: any, curr: any) => acc + (curr.cashBox || 0), 0)}
+                    {Object.values(inventoryData).reduce((acc: number, curr: any) => acc + (Number(curr.cashBox) || 0), 0)}
                   </Typography>
                 </Box>
               )}
@@ -741,19 +775,19 @@ export default function StaffActionPage() {
                 <Box>
                   <Typography variant="caption" className="text-gray-400 block">Total Recycle</Typography>
                   <Typography variant="body1" className="font-bold">
-                    {Object.values(inventoryData).reduce((acc: any, curr: any) => acc + (curr.recycleCount || 0), 0)}
+                    {Object.values(inventoryData).reduce((acc: number, curr: any) => acc + (Number(curr.recycleCount) || 0), 0)}
                   </Typography>
                 </Box>
               )}
               <Box>
                 <Typography variant="caption" className="text-gray-400 block">Total Items</Typography>
                 <Typography variant="body1" className="font-bold">
-                  {Object.values(inventoryData).reduce((acc: any, curr: any) => acc + (curr.totalNote || 0), 0)}
+                  {Object.values(inventoryData).reduce((acc: number, curr: any) => acc + (Number(curr.totalNote) || 0), 0)}
                 </Typography>
               </Box>
             </Box>
             <Typography variant="h4" className="font-black text-green-500">
-              Đ {Object.values(inventoryData).reduce((acc: any, curr: any) => acc + (curr.amount || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              Đ {(Object.values(inventoryData).reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </Typography>
           </Box>
         )}

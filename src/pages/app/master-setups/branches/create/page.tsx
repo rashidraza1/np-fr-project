@@ -35,15 +35,13 @@ export default function CreateBranchPage() {
     const [loading, setLoading] = useState(false);
 
     const validationSchema = yup.object({
-        branchName: yup.string().trim().required("Title Name (English) is required"),
-        branchNameAr: yup.string().trim().required("Title Name (Arabic) is required"),
+        branchName: yup.string().trim().required("Title is required"),
         status: yup.string().oneOf(["Active", "Inactive"]),
     });
 
     const formik = useFormik({
         initialValues: {
             branchName: "",
-            branchNameAr: "",
             status: "Active",
         },
         validationSchema: validationSchema,
@@ -73,7 +71,7 @@ export default function CreateBranchPage() {
                             Trigger: "add",
                             MasterType: 1,
                             TitleEnglish: values.branchName,
-                            TitleArabic: values.branchNameAr,
+                            TitleArabic: values.branchName,
                             IsActive: values.status === "Active" ? 1 : 0,
                             UserID: userId,
                         }),
@@ -138,7 +136,7 @@ export default function CreateBranchPage() {
                         <CardContent>
                             <form onSubmit={formik.handleSubmit}>
                                 <Grid container spacing={2} alignItems="center">
-                                    <Grid size={{ xs: 12, md: 4 }}>
+                                    <Grid size={{ xs: 12, md: 8 }}>
                                         <FormControl
                                             className="outlined"
                                             variant="standard"
@@ -147,10 +145,10 @@ export default function CreateBranchPage() {
                                             error={formik.touched.branchName && Boolean(formik.errors.branchName)}
                                         >
                                             <FormLabel component="label">
-                                                Title Name (English) <span className="text-red-500">*</span>
+                                                Title <span className="text-red-500">*</span>
                                             </FormLabel>
                                             <Input
-                                                placeholder="Title Name (English)"
+                                                placeholder="Title"
                                                 id="branchName"
                                                 name="branchName"
                                                 value={formik.values.branchName}
@@ -160,33 +158,6 @@ export default function CreateBranchPage() {
                                             {formik.touched.branchName && formik.errors.branchName && (
                                                 <Typography variant="caption" color="error" className="mt-1">
                                                     {formik.errors.branchName}
-                                                </Typography>
-                                            )}
-                                        </FormControl>
-                                    </Grid>
-                                    <Grid size={{ xs: 12, md: 4 }}>
-                                        <FormControl
-                                            className="outlined"
-                                            variant="standard"
-                                            size="small"
-                                            fullWidth
-                                            error={formik.touched.branchNameAr && Boolean(formik.errors.branchNameAr)}
-                                        >
-                                            <FormLabel component="label">
-                                                Title Name (Arabic) <span className="text-red-500">*</span>
-                                            </FormLabel>
-                                            <Input
-                                                placeholder="Title Name (Arabic)"
-                                                id="branchNameAr"
-                                                name="branchNameAr"
-                                                value={formik.values.branchNameAr}
-                                                onChange={formik.handleChange}
-                                                onBlur={formik.handleBlur}
-                                                dir="rtl"
-                                            />
-                                            {formik.touched.branchNameAr && formik.errors.branchNameAr && (
-                                                <Typography variant="caption" color="error" className="mt-1">
-                                                    {formik.errors.branchNameAr}
                                                 </Typography>
                                             )}
                                         </FormControl>

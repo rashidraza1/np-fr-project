@@ -15,18 +15,10 @@ import {
   Toolbar,
   TextField,
   CircularProgress,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip
 } from "@mui/material";
 import NiSave from "@/icons/nexture/ni-check-square";
 import NiMail from "@/icons/nexture/ni-document-full";
-import NiHistory from "@/icons/nexture/ni-document-chart";
+
 
 type ConfigOption = {
   value: string;
@@ -55,7 +47,7 @@ type ApiResponse = {
 
 export default function EmailConfigPage() {
   const [sections, setSections] = useState<{ [sectionKey: string]: ConfigSection }>({});
-  const [logs, setLogs] = useState<any[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -66,7 +58,6 @@ export default function EmailConfigPage() {
       const data: ApiResponse = await response.json();
       if (data.status === "SUCCESS") {
         setSections(data.data.sections);
-        setLogs(data.data.logs);
       } else {
         toast.error("Failed to load configurations");
       }
@@ -143,26 +134,13 @@ export default function EmailConfigPage() {
           <Grid container spacing={2.5} className="w-full">
             <Grid size={{ xs: 12, md: "grow" }}>
               <Typography variant="h1" component="h1" className="mb-0">
-                Email Configuration
+                Email Alerts
               </Typography>
               <Breadcrumbs>
                 <Link color="inherit" to="/dashboard">Home</Link>
                 <Link color="inherit" to="/pages">Master Setups</Link>
-                <Typography variant="body2">Email Config</Typography>
+                <Typography variant="body2">Email Alerts</Typography>
               </Breadcrumbs>
-            </Grid>
-            <Grid size={{ xs: 12, md: "auto" }}>
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                startIcon={<NiSave />}
-                onClick={handleSave}
-                disabled={saving}
-                className="h-[48px] px-8"
-              >
-                {saving ? "Saving..." : "Save Configuration"}
-              </Button>
             </Grid>
           </Grid>
         </Toolbar>
@@ -224,6 +202,19 @@ export default function EmailConfigPage() {
           </Box>
         </Grid>
       ))}
+      <Grid size={12} className="flex justify-end mt-4">
+        <Button
+          variant="contained"
+          color="primary"
+          size="large"
+          startIcon={<NiSave />}
+          onClick={handleSave}
+          disabled={saving}
+          className="h-[48px] px-8"
+        >
+          {saving ? "Saving..." : "Save Configuration"}
+        </Button>
+      </Grid>
 
       {/* <Grid size={12}>
         <Box className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">

@@ -132,7 +132,7 @@ export default function CreateStaffPage() {
                                             error={formik.touched.fullName && Boolean(formik.errors.fullName)}
                                         >
                                             <FormLabel component="label">
-                                                Full Name <span className="text-red-500">*</span>
+                                                Name <span className="text-red-500">*</span>
                                             </FormLabel>
                                             <Input
                                                 placeholder="Enter Full Name"

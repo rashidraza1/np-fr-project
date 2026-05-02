@@ -67,7 +67,6 @@ export default function CreateSystemUserPage() {
     const validationSchema = yup.object({
         role: yup.object().nullable().required("Role is required"),
         fullName: yup.string().trim().required("Full Name is required"),
-        fullNameAr: yup.string().trim().required("Full Name (Arabic) is required"),
         status: yup.string().required("Status is required"),
         gender: yup.string().required("Gender is required"),
         branch: yup.object().nullable().required("Branch is required"),
@@ -91,7 +90,6 @@ export default function CreateSystemUserPage() {
         initialValues: {
             role: null,
             fullName: "",
-            fullNameAr: "",
             status: "Active",
             gender: "",
             branch: null,
@@ -130,7 +128,7 @@ export default function CreateSystemUserPage() {
                             Email: values.email,
                             Password: values.password,
                             FullNameEnglish: values.fullName,
-                            FullNameArabic: values.fullNameAr,
+                            FullNameArabic: values.fullName,
                             RoleID: (values.role as any)?.TableID,
                             BranchID: (values.branch as any)?.TableID,
                             DepartmentID: (values.department as any)?.TableID,
@@ -242,7 +240,7 @@ export default function CreateSystemUserPage() {
                                             </FormControl>
                                         </Grid>
 
-                                        <Grid size={{ xs: 12, md: 4 }}>
+                                        <Grid size={{ xs: 12, md: 8 }}>
                                             <FormControl
                                                 className="outlined"
                                                 variant="standard"
@@ -263,33 +261,6 @@ export default function CreateSystemUserPage() {
                                                 {formik.touched.fullName && formik.errors.fullName && (
                                                     <Typography variant="caption" color="error" className="mt-1">
                                                         {formik.errors.fullName}
-                                                    </Typography>
-                                                )}
-                                            </FormControl>
-                                        </Grid>
-
-                                        <Grid size={{ xs: 12, md: 4 }}>
-                                            <FormControl
-                                                className="outlined"
-                                                variant="standard"
-                                                size="small"
-                                                fullWidth
-                                                error={formik.touched.fullNameAr && Boolean(formik.errors.fullNameAr)}
-                                            >
-                                                <FormLabel component="label" className="mb-1">
-                                                    Full Name (Arabic) <span className="text-red-500">*</span>
-                                                </FormLabel>
-                                                <Input
-                                                    id="fullNameAr"
-                                                    name="fullNameAr"
-                                                    value={formik.values.fullNameAr}
-                                                    onChange={formik.handleChange}
-                                                    onBlur={formik.handleBlur}
-                                                    dir="rtl"
-                                                />
-                                                {formik.touched.fullNameAr && formik.errors.fullNameAr && (
-                                                    <Typography variant="caption" color="error" className="mt-1">
-                                                        {formik.errors.fullNameAr}
                                                     </Typography>
                                                 )}
                                             </FormControl>

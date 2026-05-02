@@ -143,7 +143,7 @@ export default function EditStaffPage() {
             <Grid container spacing={2.5} className="w-full" size={12}>
                 <Grid size={{ xs: 12, md: "grow" }}>
                     <Typography variant="h1" component="h1" className="mb-0">
-                        Edit Staff
+                        Edit Maintenance Staff
                     </Typography>
                     <Breadcrumbs>
                         <Link color="inherit" to="/dashboard">
@@ -153,9 +153,9 @@ export default function EditStaffPage() {
                             Master Setups
                         </Link>
                         <Link color="inherit" to="/master-setups/staff">
-                            Staff
+                            Maintenance Staff
                         </Link>
-                        <Typography variant="body2">Edit Staff</Typography>
+                        <Typography variant="body2">Edit Maintenance Staff</Typography>
                     </Breadcrumbs>
                 </Grid>
                 <Grid size={{ xs: 12, md: "auto" }}>
@@ -187,7 +187,7 @@ export default function EditStaffPage() {
                                             error={formik.touched.fullName && Boolean(formik.errors.fullName)}
                                         >
                                             <FormLabel component="label">
-                                                Full Name <span className="text-red-500">*</span>
+                                                Name <span className="text-red-500">*</span>
                                             </FormLabel>
                                             <Input
                                                 placeholder="Enter Full Name"

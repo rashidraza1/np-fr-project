@@ -30,8 +30,8 @@ import { usePermission } from "@/hooks/use-permission";
 import { useLayoutContext } from "@/components/layout/layout-context";
 
 export default function EditKioskPage() {
-    const { canEdit } = usePermission("Kiosks");
-    const { fetchMenuPermissions, getFeaturePermissions } = useLayoutContext();
+    usePermission("Kiosks");
+    useLayoutContext();
     const navigate = useNavigate();
     const { id } = useParams();
     const location = useLocation();

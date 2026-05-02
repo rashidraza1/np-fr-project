@@ -10,6 +10,7 @@ import ProductSelection from "@/pages/ProductSelection";
 import { MenuItem } from "@/types/types";
 
 // Statically import all possible pages for build
+// Forced recompile to catch new pages
 const modules = import.meta.glob("./pages/**/page.tsx");
 
 // Lazy load page components

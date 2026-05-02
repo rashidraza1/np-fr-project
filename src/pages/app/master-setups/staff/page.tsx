@@ -1,4 +1,4 @@
-import { SyntheticEvent, useCallback, useEffect, useState } from "react";
+import { SyntheticEvent, useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -38,7 +38,6 @@ import {
   GridActionsCellItem,
   GridColDef,
   GridRenderCellParams,
-  GridRowSelectionModel,
   GridRowSpacingParams,
 } from "@mui/x-data-grid";
 
@@ -50,10 +49,8 @@ import NiBinEmpty from "@/icons/nexture/ni-bin-empty";
 import NiCheckSquare from "@/icons/nexture/ni-check-square";
 import NiChevronDownSmall from "@/icons/nexture/ni-chevron-down-small";
 import NiChevronLeftRightSmall from "@/icons/nexture/ni-chevron-left-right-small";
-import NiChevronRightSmall from "@/icons/nexture/ni-chevron-right-small";
 import NiCols from "@/icons/nexture/ni-cols";
 import NiCross from "@/icons/nexture/ni-cross";
-import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 import NiDocumentFull from "@/icons/nexture/ni-document-full";
 import NiEllipsisVertical from "@/icons/nexture/ni-ellipsis-vertical";
 import NiEyeInactive from "@/icons/nexture/ni-eye-inactive";
@@ -63,7 +60,6 @@ import NiMinusSquare from "@/icons/nexture/ni-minus-square";
 import NiPenSquare from "@/icons/nexture/ni-pen-square";
 import NiPlus from "@/icons/nexture/ni-plus";
 import NiSearch from "@/icons/nexture/ni-search";
-import NiDuplicate from "@/icons/nexture/ni-duplicate";
 import NiDocumentChart from "@/icons/nexture/ni-document-chart";
 import { cn } from "@/lib/utils";
 
@@ -77,10 +73,6 @@ type Row = {
 }
 
 export default function Page() {
-  const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>({
-    type: "include",
-    ids: new Set(),
-  });
 
   const navigate = useNavigate();
 
@@ -141,7 +133,7 @@ export default function Page() {
     const dataToExport = visibleRows.map(row => ({
       "Full Name": row.fullName,
       "Email": row.email,
-      "Staff ID": row.empCode,
+      "Login ID": row.empCode,
       "Status": row.status
     }));
 
@@ -160,7 +152,7 @@ export default function Page() {
     }
 
     const doc = new jsPDF();
-    const tableColumn = ["Full Name", "Email", "Staff ID", "Status"];
+    const tableColumn = ["Full Name", "Email", "Login ID", "Status"];
     const tableRows = visibleRows.map(row => [
       row.fullName,
       row.email,
@@ -182,11 +174,6 @@ export default function Page() {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState<string | null>(null);
-
-  const confirmDelete = (id: string) => {
-    setStaffToDelete(id);
-    setDeleteDialogOpen(true);
-  };
 
   const handleCloseDeleteDialog = () => {
     setDeleteDialogOpen(false);
@@ -218,12 +205,13 @@ export default function Page() {
   };
 
   const columns: GridColDef<Row>[] = [
-    { field: "id", headerName: "ID", width: 90, filterable: false, hideable: true },
+    { field: "id", headerName: "ID", width: 90, filterable: false, hideable: true, align: "center", headerAlign: "center" },
     {
       field: "fullName",
-      headerName: "Full Name",
+      headerName: "Name",
       flex: 1,
       minWidth: 150,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<any, string>) => (
         <Box className="flex h-full items-center">
           <Typography variant="body2" className="text-text-primary">
@@ -237,6 +225,7 @@ export default function Page() {
       headerName: "Email",
       flex: 1,
       minWidth: 200,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<any, string>) => (
         <Box className="flex h-full items-center">
           <Typography variant="body2" className="text-text-primary">
@@ -249,6 +238,7 @@ export default function Page() {
       field: "empCode",
       headerName: "Login ID",
       width: 150,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<any, string>) => (
         <Box className="flex h-full items-center">
           <Typography variant="body2" className="text-text-primary">
@@ -275,6 +265,7 @@ export default function Page() {
       headerName: "Last Login date and Time",
       flex: 1,
       minWidth: 200,
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<any, string>) => (
         <Box className="flex h-full items-center">
           <Typography variant="body2" className="text-text-primary">
@@ -286,8 +277,8 @@ export default function Page() {
     {
       field: "status",
       headerName: "Status",
-      align: "left",
-      headerAlign: "left",
+      align: "center",
+      headerAlign: "center",
       width: 120,
       type: "singleSelect",
       valueOptions: ["Active", "Inactive"],
@@ -325,8 +316,8 @@ export default function Page() {
       headerName: "Actions",
       type: "actions",
       width: 80,
-      align: "right",
-      headerAlign: "right",
+      align: "center",
+      headerAlign: "center",
       getActions: (params) => {
         const actions = [];
         actions.push(
@@ -427,7 +418,7 @@ export default function Page() {
             <Grid container spacing={2.5} className="w-full" size={12}>
               <Grid size={{ xs: 12, md: "grow" }}>
                 <Typography variant="h1" component="h1" className="mb-0">
-                  Staff Registration
+                  Maintenance Staff
                 </Typography>
                 <Breadcrumbs>
                   <Link color="inherit" to="/dashboard">
@@ -436,7 +427,7 @@ export default function Page() {
                   <Link color="inherit" to="/pages">
                     Master Setups
                   </Link>
-                  <Typography variant="body2">Staff</Typography>
+                  <Typography variant="body2">Maintenance Staff</Typography>
                 </Breadcrumbs>
               </Grid>
 
@@ -451,7 +442,7 @@ export default function Page() {
                     variant="surface"
                     startIcon={<NiPlus size={"medium"} />}
                   >
-                    Add New Staff
+                    Add New Record
                   </Button>
                 </Tooltip>
               </Grid>
@@ -460,7 +451,7 @@ export default function Page() {
             <Grid container spacing={5} className="w-full" size={12}>
               <Grid size={12}>
                 <Box className="bg-white flex w-full flex-col items-start gap-4 rounded-2xl p-4 shadow-sm">
-                  <Typography variant="h6" className="text-text-primary px-2">Staff Search</Typography>
+                  <Typography variant="h6" className="text-text-primary px-2">Maintenance Staff Search</Typography>
                   <Box className="flex w-full flex-row items-center gap-2">
                     <FormControl variant="outlined" size="medium" className="mb-0 w-80">
                       <InputLabel>Search Name/Email</InputLabel>
@@ -504,6 +495,34 @@ export default function Page() {
                     >
                       {loading ? "Searching..." : "Search"}
                     </Button>
+                    {visibleRows.length > 0 && (
+                      <Box className="flex flex-row items-center gap-2">
+                        <Tooltip title="Export to Excel">
+                          <Button
+                            size="medium"
+                            color="error"
+                            variant="contained"
+                            className="w-44 h-[48px]"
+                            startIcon={<NiDocumentChart size={"medium"} />}
+                            onClick={handleExportExcel}
+                          >
+                            Export Excel
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Export to PDF">
+                          <Button
+                            size="medium"
+                            color="warning"
+                            variant="contained"
+                            className="w-44 h-[48px]"
+                            startIcon={<NiDocumentFull size={"medium"} />}
+                            onClick={handleExportPDF}
+                          >
+                            Export PDF
+                          </Button>
+                        </Tooltip>
+                      </Box>
+                    )}
                   </Box>
                 </Box>
               </Grid>

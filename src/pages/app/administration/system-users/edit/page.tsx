@@ -71,7 +71,6 @@ export default function EditSystemUserPage() {
     const validationSchema = yup.object({
         role: yup.object().nullable().required("Role is required"),
         fullName: yup.string().trim().required("Full Name is required"),
-        fullNameAr: yup.string().trim().required("Full Name (Arabic) is required"),
         status: yup.string().required("Status is required"),
         gender: yup.string().required("Gender is required"),
         branch: yup.object().nullable().required("Branch is required"),
@@ -95,7 +94,6 @@ export default function EditSystemUserPage() {
         initialValues: {
             role: null,
             fullName: "",
-            fullNameAr: "",
             status: "Active",
             gender: "",
             branch: null,
@@ -131,7 +129,7 @@ export default function EditSystemUserPage() {
                             Email: values.email,
                             Password: values.password,
                             FullNameEnglish: values.fullName,
-                            FullNameArabic: values.fullNameAr,
+                            FullNameArabic: values.fullName,
                             RoleID: (values.role as any)?.TableID,
                             BranchID: (values.branch as any)?.TableID,
                             DepartmentID: (values.department as any)?.TableID,
@@ -170,7 +168,6 @@ export default function EditSystemUserPage() {
             formik.setValues({
                 role: { TableID: data.RoleID, TitleEnglish: data.RoleTitleEnglish } as any, // Adjust based on Autocomplete value expectation
                 fullName: data.FullNameEnglish,
-                fullNameAr: data.FullNameArabic,
                 status: data.IsActive === "1" ? "Active" : "Inactive",
                 gender: data.IsMale === "1" ? "Male" : "Female", // Assuming default string "1" or "0"
                 branch: { TableID: data.BranchID, TitleEnglish: data.BranchTitleEnglish } as any,
@@ -204,7 +201,6 @@ export default function EditSystemUserPage() {
                         formik.setValues({
                             role: { TableID: userData.RoleID, TitleEnglish: userData.RoleTitleEnglish } as any,
                             fullName: userData.FullNameEnglish,
-                            fullNameAr: userData.FullNameArabic,
                             status: userData.IsActive === "1" ? "Active" : "Inactive",
                             gender: userData.IsMale === "1" ? "Male" : "Female",
                             branch: { TableID: userData.BranchID, TitleEnglish: userData.BranchTitleEnglish } as any,
@@ -304,7 +300,7 @@ export default function EditSystemUserPage() {
                                             </FormControl>
                                         </Grid>
 
-                                        <Grid size={{ xs: 12, md: 4 }}>
+                                        <Grid size={{ xs: 12, md: 8 }}>
                                             <FormControl
                                                 className="outlined"
                                                 variant="standard"
@@ -325,33 +321,6 @@ export default function EditSystemUserPage() {
                                                 {formik.touched.fullName && formik.errors.fullName && (
                                                     <Typography variant="caption" color="error" className="mt-1">
                                                         {formik.errors.fullName}
-                                                    </Typography>
-                                                )}
-                                            </FormControl>
-                                        </Grid>
-
-                                        <Grid size={{ xs: 12, md: 4 }}>
-                                            <FormControl
-                                                className="outlined"
-                                                variant="standard"
-                                                size="small"
-                                                fullWidth
-                                                error={formik.touched.fullNameAr && Boolean(formik.errors.fullNameAr)}
-                                            >
-                                                <FormLabel component="label" className="mb-1">
-                                                    Full Name (Arabic) <span className="text-red-500">*</span>
-                                                </FormLabel>
-                                                <Input
-                                                    id="fullNameAr"
-                                                    name="fullNameAr"
-                                                    value={formik.values.fullNameAr}
-                                                    onChange={formik.handleChange}
-                                                    onBlur={formik.handleBlur}
-                                                    dir="rtl"
-                                                />
-                                                {formik.touched.fullNameAr && formik.errors.fullNameAr && (
-                                                    <Typography variant="caption" color="error" className="mt-1">
-                                                        {formik.errors.fullNameAr}
                                                     </Typography>
                                                 )}
                                             </FormControl>

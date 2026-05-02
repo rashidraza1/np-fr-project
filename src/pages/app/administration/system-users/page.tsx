@@ -118,10 +118,8 @@ export default function Page() {
   const [isTableVisible, setIsTableVisible] = useState(false);
   const [filterStatus, setFilterStatus] = useState("");
   const [filterSearch, setFilterSearch] = useState("");
-  const [filterEmail, setFilterEmail] = useState("");
   const [filterRole, setFilterRole] = useState<any | null>(null);
   const [filterBranch, setFilterBranch] = useState<any | null>(null);
-  const [filterDepartment, setFilterDepartment] = useState<any | null>(null);
 
   const [visibleRows, setVisibleRows] = useState<Row[]>([]);
 
@@ -247,10 +245,10 @@ export default function Page() {
           method: "POST",
           body: JSON.stringify({
             Name: filterSearch,
-            Email: filterEmail,
+            Email: "",
             RoleID: filterRole?.TableID || "",
             BranchID: filterBranch?.TableID || "",
-            DepartmentID: filterDepartment?.TableID || "",
+            DepartmentID: "",
             IsActive: filterStatus === "Active" ? "1" : filterStatus === "Inactive" ? "0" : "",
           }),
         },
@@ -278,7 +276,7 @@ export default function Page() {
     } finally {
       setLoading(false);
     }
-  }, [filterSearch, filterStatus, filterEmail, filterRole, filterBranch, filterDepartment]);
+  }, [filterSearch, filterStatus, filterRole, filterBranch]);
 
   // useEffect(() => {
   //   fetchSystemUsers();
@@ -356,8 +354,6 @@ export default function Page() {
     const dataToExport = visibleRows.map(row => ({
       "Full Name": row.name,
       "Full Name Arabic": row.fullData?.FullNameArabic || "",
-      "Email": row.email,
-      "Contact Number": row.mobile,
       "Branch": row.branch,
       "Role": row.role,
       "Status": row.status
@@ -392,12 +388,10 @@ export default function Page() {
       isFontLoaded = false;
     }
 
-    const tableColumn = ["Full Name", "Full Name (Arabic)", "Email", "Contact Number", "Branch", "Role", "Status"];
+    const tableColumn = ["Full Name", "Full Name (Arabic)", "Branch", "Role", "Status"];
     const tableRows = visibleRows.map(row => [
       row.name,
       reshapeArabic(row.fullData?.FullNameArabic || ""),
-      row.email,
-      row.mobile,
       row.branch,
       row.role,
       row.status
@@ -436,15 +430,17 @@ export default function Page() {
   };
 
   const columns: GridColDef<(typeof initialRows)[number]>[] = [
-    { field: "id", headerName: "ID", width: 90, filterable: false },
+    { field: "id", headerName: "ID", width: 90, filterable: false, align: "center", headerAlign: "center" },
     {
       field: "name",
       headerName: "Full Name",
       flex: 1,
       minWidth: 150,
+      align: "left",
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<any, string>) => (
-        <Box className="flex h-full items-center">
-          <Typography variant="body2" className="text-text-primary">
+        <Box className="flex h-full items-center justify-start w-full">
+          <Typography variant="body2" className="text-text-primary text-left">
             {params.value}
           </Typography>
         </Box>
@@ -452,39 +448,15 @@ export default function Page() {
     },
 
     {
-      field: "email",
-      headerName: "Email",
-      flex: 1,
-      minWidth: 150,
-      renderCell: (params: GridRenderCellParams<any, string>) => (
-        <Box className="flex h-full items-center">
-          <Typography variant="body2" className="text-text-primary">
-            {params.value}
-          </Typography>
-        </Box>
-      ),
-    },
-    {
-      field: "mobile",
-      headerName: "Contact Number",
-      flex: 1,
-      minWidth: 120,
-      renderCell: (params: GridRenderCellParams<any, string>) => (
-        <Box className="flex h-full items-center">
-          <Typography variant="body2" className="text-text-primary">
-            {params.value}
-          </Typography>
-        </Box>
-      ),
-    },
-    {
       field: "branch",
       headerName: "Branch",
       flex: 1,
       minWidth: 120,
+      align: "left",
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<any, string>) => (
-        <Box className="flex h-full items-center">
-          <Typography variant="body2" className="text-text-primary">
+        <Box className="flex h-full items-center justify-start w-full">
+          <Typography variant="body2" className="text-text-primary text-left">
             {params.value}
           </Typography>
         </Box>
@@ -495,9 +467,11 @@ export default function Page() {
       headerName: "Role",
       flex: 1,
       minWidth: 100,
+      align: "left",
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<any, string>) => (
-        <Box className="flex h-full items-center">
-          <Typography variant="body2" className="text-text-primary">
+        <Box className="flex h-full items-center justify-start w-full">
+          <Typography variant="body2" className="text-text-primary text-left">
             {params.value}
           </Typography>
         </Box>
@@ -506,8 +480,8 @@ export default function Page() {
     {
       field: "status",
       headerName: "Status",
-      align: "left",
-      headerAlign: "left",
+      align: "center",
+      headerAlign: "center",
       width: 100,
       type: "singleSelect",
       valueOptions: ["Active", "Inactive"],
@@ -545,8 +519,8 @@ export default function Page() {
       headerName: "Actions",
       type: "actions",
       width: 80,
-      align: "right",
-      headerAlign: "right",
+      align: "center",
+      headerAlign: "center",
       getActions: (params) => {
         const actions = [];
 
@@ -806,26 +780,6 @@ export default function Page() {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                       <FormControl variant="outlined" size="medium" className="mb-0 w-full">
-                        <InputLabel>Email</InputLabel>
-                        <FilledInput
-                          disableUnderline
-                          className="bg-transparent"
-                          value={filterEmail}
-                          onChange={(e) => setFilterEmail(e.target.value)}
-                          endAdornment={
-                            <>
-                              <InputAdornment position="end" className={cn(filterEmail === "" && "hidden")}>
-                                <IconButton edge="end" onClick={() => setFilterEmail("")}>
-                                  <NiCross size="medium" className="text-text-disabled" />
-                                </IconButton>
-                              </InputAdornment>
-                            </>
-                          }
-                        />
-                      </FormControl>
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                      <FormControl variant="outlined" size="medium" className="mb-0 w-full">
                         <Autocomplete
                           options={rolesOptions}
                           getOptionLabel={(option) => option.TitleEnglish || ""}
@@ -860,24 +814,6 @@ export default function Page() {
                         />
                       </FormControl>
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                      <FormControl variant="outlined" size="medium" className="mb-0 w-full">
-                        <Autocomplete
-                          options={departmentsOptions}
-                          getOptionLabel={(option) => option.TitleEnglish || ""}
-                          value={filterDepartment}
-                          onChange={(_, newValue) => setFilterDepartment(newValue)}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="Department"
-                              variant="filled"
-                              InputProps={{ ...params.InputProps, disableUnderline: true, className: "bg-transparent" }}
-                            />
-                          )}
-                        />
-                      </FormControl>
-                    </Grid>
 
                     <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                       <FormControl variant="outlined" size="medium" className="mb-0 w-full">
@@ -893,12 +829,12 @@ export default function Page() {
                         </Select>
                       </FormControl>
                     </Grid>
-                    <Grid size={{ xs: 12, lg: "grow" }} className="flex flex-row items-end gap-2 flex-wrap px-2">
+                    <Grid size={{ xs: 12, lg: "grow" }} className="flex flex-row items-end justify-end gap-2 flex-wrap px-2">
                       <Button
                         size="medium"
                         color="primary"
                         variant="contained"
-                        className="w-32 h-[48px]"
+                        className="w-44 h-[48px]"
                         startIcon={<NiSearch />}
                         onClick={handleSearch}
                       >

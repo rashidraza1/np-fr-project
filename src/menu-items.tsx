@@ -160,7 +160,7 @@ export const leftMenuItems: MenuItem[] = [
       {
         id: "staff",
         icon: "NiBuilding",
-        label: "Staff",
+        label: "Maintenance Staff",
         href: "/master-setups/staff",
       },
       {
@@ -178,13 +178,13 @@ export const leftMenuItems: MenuItem[] = [
       {
         id: "email-config",
         icon: "NiBuilding",
-        label: "Email Config",
+        label: "Email Alerts",
         href: "/master-setups/email-config",
       },
       {
         id: "staff-action",
         icon: "NiBuilding",
-        label: "Staff Action",
+        label: "Maintenance Logs",
         href: "/master-setups/staff-action",
       },
     ],
@@ -341,17 +341,28 @@ export const leftMenuItems: MenuItem[] = [
   {
     id: "reports",
     icon: "NiDocumentChart",
-    label: "Payment Transaction",
+    label: "Reporting",
     href: "#",
     children: [
 
       {
         id: "transaction",
         icon: "NiMoney",
-        label: "Transaction List",
+        label: "All Transaction",
         href: "/reports/transaction",
       },
-
+      {
+        id: "partial-transaction",
+        icon: "NiMoney",
+        label: "Partial Transaction List",
+        href: "/reports/partial-transaction",
+      },
+      {
+        id: "completed-transaction",
+        icon: "NiMoney",
+        label: "Completed Transaction List",
+        href: "/reports/completed-transaction",
+      },
     ],
   },
 

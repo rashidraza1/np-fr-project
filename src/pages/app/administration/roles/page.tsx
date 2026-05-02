@@ -309,40 +309,28 @@ export default function Page() {
   };
 
   const columns: GridColDef<Row>[] = [
-    { field: "id", headerName: "ID", width: 90, filterable: false },
+    { field: "id", headerName: "ID", width: 90, filterable: false, align: "center", headerAlign: "center" },
     {
       field: "groupName",
-      headerName: "Title Name",
+      headerName: "Title",
       flex: 1,
       minWidth: 150,
+      align: "left",
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<any, string>) => (
-        <Box className="flex h-full items-center">
-          <Typography variant="body2" className="text-text-primary">
+        <Box className="flex h-full items-center justify-start w-full">
+          <Typography variant="body2" className="text-text-primary text-left">
             {params.value}
           </Typography>
         </Box>
       ),
     },
-    {
-      field: "groupNameArabic",
-      headerName: "Title Name Arabic",
-      flex: 1,
-      minWidth: 150,
-      align: "right",
-      headerAlign: "right",
-      renderCell: (params: GridRenderCellParams<any, string>) => (
-        <Box className="flex h-full items-center justify-end w-full">
-          <Typography variant="body2" className="text-text-primary">
-            {params.value}
-          </Typography>
-        </Box>
-      ),
-    },
+
     {
       field: "status",
       headerName: "Status",
-      align: "left",
-      headerAlign: "left",
+      align: "center",
+      headerAlign: "center",
       width: 90,
       type: "singleSelect",
       valueOptions: ["Active", "Inactive"],

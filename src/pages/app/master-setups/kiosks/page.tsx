@@ -5,8 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { reshapeArabic } from "@/utils/arabic-reshaper";
-import { arabicFontBase64 } from "@/utils/arabic-font";
+
 
 import {
     Box,
@@ -109,6 +108,7 @@ export default function Page() {
     const [editPopupLoading, setEditPopupLoading] = useState(false);
     const [viewPopupOpen, setViewPopupOpen] = useState(false);
     const [inventoryData, setInventoryData] = useState<any[]>([]);
+    const [routeError, setRouteError] = useState<string | null>(null);
 
     const handleOpenViewPopup = async (row: Row) => {
         setSelectedKiosk(row);
@@ -225,6 +225,7 @@ export default function Page() {
         setSelectedKiosk(row);
         setEditPopupOpen(true);
         setEditPopupLoading(true);
+        setRouteError(null);
 
         try {
             const response = await fetch(`${import.meta.env.VITE_API_URL}api/note_route_api.php?KioskID=${row.id}`);
@@ -289,7 +290,11 @@ export default function Page() {
                 // Note: We don't need to re-fetch the main kiosk list since we aren't showing the individual routes there
                 setEditPopupOpen(false);
             } else {
-                toast.error(data.message || "Failed to update recycle notes");
+                if (data.message === "The cassettes are not empty, please empty the cassettes in order to update the denomination") {
+                    setRouteError(data.message);
+                } else {
+                    toast.error(data.message || "Failed to update recycle notes");
+                }
             }
         } catch (error) {
             console.error("Error updating kiosk:", error);
@@ -299,10 +304,7 @@ export default function Page() {
         }
     };
 
-    const confirmDelete = (id: string) => {
-        setKioskToDelete(id);
-        setDeleteDialogOpen(true);
-    };
+
 
     const handleCloseDeleteDialog = () => {
         setDeleteDialogOpen(false);
@@ -357,12 +359,14 @@ export default function Page() {
     };
 
     const columns: GridColDef<Row>[] = [
-        { field: "id", headerName: "ID", width: 90, filterable: false },
+        { field: "id", headerName: "ID", width: 90, filterable: false, headerAlign: "center", align: "center" },
         {
             field: "kioskName",
             headerName: "Title",
             flex: 1,
             minWidth: 150,
+            headerAlign: "center",
+            align: "center",
             renderCell: (params: GridRenderCellParams<any, string>) => (
                 <Box className="flex h-full items-center">
                     <Typography variant="body2" className="text-text-primary">
@@ -387,8 +391,8 @@ export default function Page() {
         {
             field: "status",
             headerName: "Status",
-            align: "left",
-            headerAlign: "left",
+            align: "center",
+            headerAlign: "center",
             width: 120,
             renderCell: (params: GridRenderCellParams<any, string>) => {
                 const value = params.value;
@@ -423,8 +427,10 @@ export default function Page() {
             field: "recycleNote",
             headerName: "Recycler Info",
             width: 150,
+            headerAlign: "center",
+            align: "left",
             renderCell: (params: GridRenderCellParams<any, string>) => (
-                <Box className="flex h-full items-center justify-between w-full pr-2">
+                <Box className="flex h-full items-center justify-start gap-2 w-full pr-2">
                     <Typography variant="body2" className="text-text-primary">
                         {params.value}
                     </Typography>
@@ -438,8 +444,10 @@ export default function Page() {
             field: "denomination",
             headerName: "Denomination",
             width: 150,
+            headerAlign: "center",
+            align: "left",
             renderCell: (params: GridRenderCellParams<any, number>) => (
-                <Box className="flex h-full items-center justify-between w-full pr-2">
+                <Box className="flex h-full items-center justify-start gap-2 w-full pr-2">
                     <Typography variant="body2" className="text-text-primary">
                         {params.value}
                     </Typography>
@@ -454,8 +462,8 @@ export default function Page() {
             headerName: "Actions",
             type: "actions",
             width: 80,
-            align: "right",
-            headerAlign: "right",
+            align: "left",
+            headerAlign: "center",
             getActions: (params) => {
                 const actions = [];
                 if (canEdit) {
@@ -877,17 +885,30 @@ export default function Page() {
                     )}
                 </DialogContent>
                 <DialogActions className="p-6">
-                    <Button
-                        onClick={() => setEditPopupOpen(false)}
-                        color="grey"
-                        variant="surface"
-                        startIcon={<NiCross size="small" />}
-                    >
-                        Cancel
-                    </Button>
-                    <Button onClick={handleUpdateKiosk} color="primary" variant="contained" disabled={loading}>
-                        {loading ? "Saving..." : "Save Changes"}
-                    </Button>
+                    {routeError ? (
+                        <Box className="w-full bg-red-50 border border-red-200 p-4 rounded-lg flex items-center gap-3">
+                            <Box className="flex-shrink-0">
+                                <NiCrossSquare className="text-red-600" size="medium" />
+                            </Box>
+                            <Typography className="text-red-800 font-semibold text-sm leading-snug">
+                                {routeError}
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <>
+                            <Button
+                                onClick={() => setEditPopupOpen(false)}
+                                color="grey"
+                                variant="surface"
+                                startIcon={<NiCross size="small" />}
+                            >
+                                Cancel
+                            </Button>
+                            <Button onClick={handleUpdateKiosk} color="primary" variant="contained" disabled={loading}>
+                                {loading ? "Saving..." : "Save Changes"}
+                            </Button>
+                        </>
+                    )}
                 </DialogActions>
             </Dialog>
 

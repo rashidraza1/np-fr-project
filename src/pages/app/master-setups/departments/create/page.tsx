@@ -35,15 +35,13 @@ export default function CreateDepartmentPage() {
     const [loading, setLoading] = useState(false);
 
     const validationSchema = yup.object({
-        departmentName: yup.string().trim().required("Title Name (English) is required"),
-        departmentNameAr: yup.string().trim().required("Title Name (Arabic) is required"),
+        departmentName: yup.string().trim().required("Title is required"),
         status: yup.string().oneOf(["Active", "Inactive"]),
     });
 
     const formik = useFormik({
         initialValues: {
             departmentName: "",
-            departmentNameAr: "",
             status: "Active",
         },
         validationSchema: validationSchema,
@@ -73,7 +71,7 @@ export default function CreateDepartmentPage() {
                             Trigger: "add",
                             MasterType: 2,
                             TitleEnglish: values.departmentName,
-                            TitleArabic: values.departmentNameAr,
+                            TitleArabic: values.departmentName,
                             IsActive: values.status === "Active" ? 1 : 0,
                             UserID: userId,
                         }),
@@ -138,7 +136,7 @@ export default function CreateDepartmentPage() {
                         <CardContent>
                             <form onSubmit={formik.handleSubmit}>
                                 <Grid container spacing={2} alignItems="center">
-                                    <Grid size={{ xs: 12, md: 4 }}>
+                                    <Grid size={{ xs: 12, md: 8 }}>
                                         <FormControl
                                             className="outlined"
                                             variant="standard"
@@ -147,10 +145,10 @@ export default function CreateDepartmentPage() {
                                             error={formik.touched.departmentName && Boolean(formik.errors.departmentName)}
                                         >
                                             <FormLabel component="label">
-                                                Title Name (English) <span className="text-red-500">*</span>
+                                                Title <span className="text-red-500">*</span>
                                             </FormLabel>
                                             <Input
-                                                placeholder="Title Name (English)"
+                                                placeholder="Title"
                                                 id="departmentName"
                                                 name="departmentName"
                                                 value={formik.values.departmentName}
@@ -160,33 +158,6 @@ export default function CreateDepartmentPage() {
                                             {formik.touched.departmentName && formik.errors.departmentName && (
                                                 <Typography variant="caption" color="error" className="mt-1">
                                                     {formik.errors.departmentName}
-                                                </Typography>
-                                            )}
-                                        </FormControl>
-                                    </Grid>
-                                    <Grid size={{ xs: 12, md: 4 }}>
-                                        <FormControl
-                                            className="outlined"
-                                            variant="standard"
-                                            size="small"
-                                            fullWidth
-                                            error={formik.touched.departmentNameAr && Boolean(formik.errors.departmentNameAr)}
-                                        >
-                                            <FormLabel component="label">
-                                                Title Name (Arabic) <span className="text-red-500">*</span>
-                                            </FormLabel>
-                                            <Input
-                                                placeholder="Title Name (Arabic)"
-                                                id="departmentNameAr"
-                                                name="departmentNameAr"
-                                                value={formik.values.departmentNameAr}
-                                                onChange={formik.handleChange}
-                                                onBlur={formik.handleBlur}
-                                                dir="rtl"
-                                            />
-                                            {formik.touched.departmentNameAr && formik.errors.departmentNameAr && (
-                                                <Typography variant="caption" color="error" className="mt-1">
-                                                    {formik.errors.departmentNameAr}
                                                 </Typography>
                                             )}
                                         </FormControl>

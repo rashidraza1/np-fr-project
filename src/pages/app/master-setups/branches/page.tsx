@@ -288,38 +288,28 @@ export default function Page() {
   };
 
   const columns: GridColDef<Row>[] = [
-    { field: "id", headerName: "ID", width: 90, filterable: false },
+    { field: "id", headerName: "ID", width: 90, filterable: false, align: "center", headerAlign: "center" },
     {
       field: "branchName",
-      headerName: "Title Name",
+      headerName: "Title",
       flex: 1,
       minWidth: 150,
+      align: "left",
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<any, string>) => (
-        <Box className="flex h-full items-center">
-          <Typography variant="body2" className="text-text-primary">
+        <Box className="flex h-full items-center justify-start w-full">
+          <Typography variant="body2" className="text-text-primary text-left">
             {params.value}
           </Typography>
         </Box>
       ),
     },
-    {
-      field: "branchNameArabic",
-      headerName: "Title Name (Arabic)",
-      flex: 1,
-      minWidth: 150,
-      renderCell: (params: GridRenderCellParams<any, string>) => (
-        <Box className="flex h-full items-center">
-          <Typography variant="body2" className="text-text-primary">
-            {params.value}
-          </Typography>
-        </Box>
-      ),
-    },
+
     {
       field: "status",
       headerName: "Status",
-      align: "left",
-      headerAlign: "left",
+      align: "center",
+      headerAlign: "center",
       width: 100,
       type: "singleSelect",
       valueOptions: ["Active", "Inactive"],
@@ -369,17 +359,6 @@ export default function Page() {
               label="Edit"
               showInMenu
               onClick={() => navigate(`/master-setups/branches/edit/${params.id}`, { state: params.row })}
-            />
-          );
-        }
-        if (canDelete) {
-          actions.push(
-            <GridActionsCellItem
-              key={0}
-              icon={<NiCrossSquare size="medium" />}
-              label="Delete"
-              showInMenu
-              onClick={() => confirmDelete(params.id as string)}
             />
           );
         }
@@ -462,16 +441,6 @@ export default function Page() {
                   </ListItemIcon>
                   <ListItemText>Duplicate</ListItemText>
                 </MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    handleCloseSelection();
-                  }}
-                >
-                  <ListItemIcon>
-                    <NiCrossSquare size="medium" />
-                  </ListItemIcon>
-                  <ListItemText>Delete</ListItemText>
-                </MenuItem>
               </Menu>
             </>
           )}
@@ -551,23 +520,6 @@ export default function Page() {
                 </Breadcrumbs>
               </Grid>
 
-              {canAdd && (
-                <Grid size={{ xs: 12, md: "auto" }} className="flex flex-row items-start gap-2">
-                  <Tooltip title="Add Item">
-                    <Button
-                      component={Link}
-                      to="/master-setups/branches/create"
-                      className="surface-standard"
-                      size="medium"
-                      color="grey"
-                      variant="surface"
-                      startIcon={<NiPlus size={"medium"} />}
-                    >
-                      Add New Record
-                    </Button>
-                  </Tooltip>
-                </Grid>
-              )}
             </Grid>
 
             <Grid container spacing={5} className="w-full" size={12}>

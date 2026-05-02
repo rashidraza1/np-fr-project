@@ -28,6 +28,7 @@ export default function MyProfilePage() {
   const { fetchMenuPermissions, getFeaturePermissions } = useLayoutContext();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [profileData, setProfileData] = useState<any>(null);
 
   const validationSchema = yup.object({
     fullName: yup.string().required("Full Name is required"),
@@ -39,12 +40,10 @@ export default function MyProfilePage() {
   const formik = useFormik({
     initialValues: {
       fullName: "",
-      fullNameAr: "",
       email: "",
       mobile: "",
       fax: "",
       gender: "",
-      status: "",
       role: "",
       branch: "",
       department: "",
@@ -57,15 +56,53 @@ export default function MyProfilePage() {
 
       if (!canEditFresh) {
         toast.error("You do not have permission to update profile.");
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 1500);
         return;
       }
 
-      console.log("Updating profile:", values);
-      // NOTE: User only requested "Show Profile" API. Update API not yet provided.
-      // navigate("/dashboard");
+      if (!profileData) {
+        toast.error("Profile data not loaded.");
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const storagePrefix = import.meta.env.VITE_STORAGE_PREFIX || "nx";
+        const userId = localStorage.getItem(`${storagePrefix}:userId`) || "10000";
+
+        const response = await fetch(
+          `${import.meta.env.VITE_BASE_URL}/webservice/?class=general&action=AddEditRSIGeneralSystemUser&WebServiceUserName=WebserviceUser&Password=oqkq12345234`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              Trigger: "edit",
+              TableID: userId,
+              Email: values.email,
+              FullNameEnglish: values.fullName,
+              FullNameArabic: profileData.FullNameArabic, // Preserve existing
+              RoleID: profileData.RoleID,
+              BranchID: profileData.BranchID,
+              DepartmentID: profileData.DepartmentID,
+              IsMale: profileData.IsMale,
+              ContactNumber: values.mobile,
+              IsActive: profileData.IsActive,
+              UserID: userId,
+            }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (data.status === "SUCCESS") {
+          toast.success(data.message || "Profile updated successfully");
+        } else {
+          toast.error(data.message || "Failed to update profile");
+        }
+      } catch (error) {
+        console.error("Error updating profile:", error);
+        toast.error("An error occurred while updating profile.");
+      } finally {
+        setLoading(false);
+      }
     },
   });
 
@@ -89,14 +126,13 @@ export default function MyProfilePage() {
 
         if (data.status === "SUCCESS" && data.data && data.data.RecordListing && data.data.RecordListing.length > 0) {
           const record = data.data.RecordListing[0];
+          setProfileData(record);
           formik.setValues({
             fullName: record.FullNameEnglish || "",
-            fullNameAr: record.FullNameArabic || "",
             email: record.Email || "",
             mobile: record.ContactNumber || "",
             fax: "", // API doesn't seem to return Fax in the example, leaving empty
             gender: record.Gender || "",
-            status: record.IsActive === "1" ? "Active" : "Inactive",
             role: record.RoleTitleEnglish || "",
             branch: record.BranchTitleEnglish || "",
             department: record.DepartmentTitleEnglish || "",
@@ -161,10 +197,10 @@ export default function MyProfilePage() {
                       fullWidth
                     >
                       <FormLabel component="label">
-                        Full Name (English)
+                        Full Name
                       </FormLabel>
                       <Input
-                        placeholder="Full Name (English)"
+                        placeholder="Full Name"
                         id="fullName"
                         name="fullName"
                         value={formik.values.fullName}
@@ -172,30 +208,6 @@ export default function MyProfilePage() {
                         disabled
                         className="bg-gray-100"
                         disableUnderline
-                      />
-                    </FormControl>
-                  </Grid>
-
-                  <Grid size={{ xs: 12, md: 3 }}>
-                    <FormControl
-                      className="outlined"
-                      variant="standard"
-                      size="small"
-                      fullWidth
-                    >
-                      <FormLabel component="label">
-                        Full Name (Arabic)
-                      </FormLabel>
-                      <Input
-                        placeholder="Full Name (Arabic)"
-                        id="fullNameAr"
-                        name="fullNameAr"
-                        value={formik.values.fullNameAr}
-                        readOnly
-                        disabled
-                        className="bg-gray-100"
-                        disableUnderline
-                        dir="rtl"
                       />
                     </FormControl>
                   </Grid>
@@ -273,28 +285,7 @@ export default function MyProfilePage() {
                     </FormControl>
                   </Grid>
 
-                  <Grid size={{ xs: 12, md: 3 }}>
-                    <FormControl
-                      className="outlined"
-                      variant="standard"
-                      size="small"
-                      fullWidth
-                    >
-                      <FormLabel component="label">
-                        Status
-                      </FormLabel>
-                      <Input
-                        placeholder="Status"
-                        id="status"
-                        name="status"
-                        value={formik.values.status}
-                        readOnly
-                        disabled
-                        className="bg-gray-100"
-                        disableUnderline
-                      />
-                    </FormControl>
-                  </Grid>
+
 
                   <Grid size={{ xs: 12, md: 3 }}>
                     <FormControl

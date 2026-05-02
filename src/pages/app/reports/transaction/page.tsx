@@ -74,6 +74,18 @@ interface Payment {
   PaymentTypeText: string;
   PaymentType: number;
   AmountPaid: number;
+  SourceID?: string;
+  ReceiptNumber?: string;
+  TransactionDate?: string;
+  CardInformation?: {
+    cardNumber?: string;
+    authCode?: string;
+    ReceiptNo?: string;
+    resultCodeDescription?: string;
+    type?: string;
+    cardType?: string;
+    [key: string]: any;
+  };
 }
 
 interface MasterRecord {
@@ -81,10 +93,16 @@ interface MasterRecord {
   TitleEnglish: string;
 }
 
-interface CashDetail {
-  Denomination: number;
+interface CashItem {
+  SNo: number;
+  Currency: string;
   Count: number;
-  Amount: number;
+  Amount: string | number;
+}
+
+interface CashSummary {
+  TotalCount: number;
+  TotalAmount: string;
 }
 
 interface TransactionRow {
@@ -99,13 +117,40 @@ interface TransactionRow {
   BranchEnglish: string;
   KioskEnglish: string;
   TotalAmountDue: number;
+  BalanceAmount?: number;
+  TotalPaymentReceived?: number;
+  Status?: string | number;
   salesOrders: SalesOrder[];
   payments: Payment[];
-  cashTransactions?: CashDetail[];
-  cashPayouts?: CashDetail[];
+  cash_transactions?: CashItem[];
+  cash_summary?: CashSummary;
+  cash_payout?: CashItem[];
+  cash_payout_summary?: CashSummary;
 }
 
 const DENOMINATIONS = [1000, 500, 200, 100, 50, 20, 10, 5, 1];
+
+const formatDateTime = (dateString: string) => {
+  if (!dateString) return "";
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return dateString;
+
+  const day = d.getDate();
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const month = monthNames[d.getMonth()];
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+
+  const getOrdinal = (n: number) => {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return s[(v - 20) % 10] || s[v] || s[0];
+  };
+
+  return `${day}${getOrdinal(day)} ${month} ${year} ${hours}:${minutes}:${seconds}`;
+};
 
 export default function TransactionReportPage() {
   const { canRead } = usePermission("Transaction List");
@@ -121,8 +166,7 @@ export default function TransactionReportPage() {
   const [paymentType, setPaymentType] = useState("3"); // Default to 'Both' (3)
   const [companyName, setCompanyName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
-  const [branchId, setBranchId] = useState("All");
-  const [kioskId, setKioskId] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [isTableVisible, setIsTableVisible] = useState(false);
 
   // Cash Sections state
@@ -134,38 +178,9 @@ export default function TransactionReportPage() {
     page: 0,
   });
 
-  // Master lists
-  const [branches, setBranches] = useState<MasterRecord[]>([]);
-  const [kiosks, setKiosks] = useState<MasterRecord[]>([]);
-
-
-  const fetchMasterList = useCallback(async (masterType: number) => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/webservice/?class=general&action=RSIGeneralMasterList&WebServiceUserName=WebserviceUser&Password=oqkq12345234`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            MasterType: masterType,
-            IsActive: "1"
-          }),
-        }
-      );
-      const data = await response.json();
-      if (data.status === "SUCCESS" && data.data && data.data.RecordListing) {
-        const records = Array.isArray(data.data.RecordListing) ? data.data.RecordListing : [data.data.RecordListing];
-        if (masterType === 1) setBranches(records);
-        if (masterType === 4) setKiosks(records);
-      }
-    } catch (error) {
-      console.error(`Error fetching master list ${masterType}:`, error);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchMasterList(1); // Branches
-    fetchMasterList(4); // Kiosks
-  }, [fetchMasterList]);
+    // Master data fetching removed
+  }, []);
 
 
 
@@ -189,9 +204,10 @@ export default function TransactionReportPage() {
             MobileNumber: mobileNumber,
             PaymentType: paymentType === "3" ? "" : paymentType,
             CompanyName: companyName,
-            BranchID: branchId === "All" ? "" : branchId,
-            KioskID: kioskId === "All" ? "" : kioskId,
-            TableID: ""
+            BranchID: "",
+            KioskID: "",
+            TableID: "",
+            Status: statusFilter === "All" ? "" : statusFilter
           }),
         }
       );
@@ -203,7 +219,13 @@ export default function TransactionReportPage() {
           id: item.TableID, // DataGrid requires an 'id' field
           TotalAmountDue: typeof item.TotalAmountDue === 'string'
             ? parseFloat(item.TotalAmountDue.replace(/,/g, ''))
-            : (Number(item.TotalAmountDue) || 0)
+            : (Number(item.TotalAmountDue) || 0),
+          BalanceAmount: typeof item.BalanceAmount === 'string'
+            ? parseFloat(item.BalanceAmount.replace(/,/g, ''))
+            : (Number(item.BalanceAmount) || 0),
+          TotalPaymentReceived: typeof item.TotalPaid === 'string'
+            ? parseFloat(item.TotalPaid.replace(/,/g, ''))
+            : (Number(item.TotalPaid) || 0)
         }));
         setVisibleRows(mappedRows);
         setIsTableVisible(true);
@@ -218,7 +240,7 @@ export default function TransactionReportPage() {
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate, mobileNumber, paymentType, companyName, branchId, kioskId]);
+  }, [fromDate, toDate, mobileNumber, paymentType, companyName, statusFilter]);
 
   const handleSearch = () => {
     fetchTransactions();
@@ -228,30 +250,6 @@ export default function TransactionReportPage() {
     const transaction = visibleRows.find((row) => row.id === id);
     if (transaction) {
       setSelectedTransaction(transaction);
-      
-      // Initialize with zeros
-      const initialTransactions = DENOMINATIONS.reduce((acc, d) => ({ ...acc, [d]: 0 }), {} as Record<number, number>);
-      const initialPayouts = DENOMINATIONS.reduce((acc, d) => ({ ...acc, [d]: 0 }), {} as Record<number, number>);
-
-      // Fill from API data if exists
-      if (transaction.cashTransactions) {
-        transaction.cashTransactions.forEach(item => {
-          if (initialTransactions.hasOwnProperty(item.Denomination)) {
-            initialTransactions[item.Denomination] = item.Count;
-          }
-        });
-      }
-      
-      if (transaction.cashPayouts) {
-        transaction.cashPayouts.forEach(item => {
-          if (initialPayouts.hasOwnProperty(item.Denomination)) {
-            initialPayouts[item.Denomination] = item.Count;
-          }
-        });
-      }
-
-      setCashTransactions(initialTransactions);
-      setCashPayouts(initialPayouts);
       setOpenModal(true);
     }
   };
@@ -269,28 +267,32 @@ export default function TransactionReportPage() {
 
     const dataToExport = visibleRows.map((row, index) => ({
       "S.No.": index + 1,
-      "Transaction date": row.TransactionDate,
+      "Transaction date": formatDateTime(row.TransactionDate),
       "Transaction No.": row.TransactionReferenceNumber,
       "Payment Type": row.PaymentTypeText,
+      "Status": row.Status == 1 || row.Status == "1" ? "Partial" : row.Status == 2 || row.Status == "2" ? "Completed" : row.Status || "",
       "Company name": row.CompanyName,
       "Mobile Number": row.MobileNumber,
-      "Branch": row.BranchEnglish,
-      "Kiosk": row.KioskEnglish,
-      "Amount": `AED ${row.TotalAmountDue}`,
+      "Total Amount Due": `AED ${row.TotalAmountDue}`,
+      "Total payment received": `AED ${row.TotalPaymentReceived || 0}`,
+      "Balance Amount": `AED ${row.BalanceAmount || 0}`,
     }));
 
     // Add Grand Total row
     const totalAmount = visibleRows.reduce((sum, row) => sum + row.TotalAmountDue, 0).toFixed(2);
+    const totalReceived = visibleRows.reduce((sum, row) => sum + (row.TotalPaymentReceived || 0), 0).toFixed(2);
+    const totalBalance = visibleRows.reduce((sum, row) => sum + (row.BalanceAmount || 0), 0).toFixed(2);
     dataToExport.push({
       "S.No.": "",
       "Transaction date": "",
       "Transaction No.": "",
       "Payment Type": "",
+      "Status": "",
       "Company name": "",
-      "Mobile Number": "",
-      "Branch": "Grand Total:",
-      "Kiosk": "",
-      "Amount": `AED ${totalAmount}`,
+      "Mobile Number": "Grand Total:",
+      "Total Amount Due": `AED ${totalAmount}`,
+      "Total payment received": `AED ${totalReceived}`,
+      "Balance Amount": `AED ${totalBalance}`,
     } as any);
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
@@ -321,25 +323,28 @@ export default function TransactionReportPage() {
       isFontLoaded = false;
     }
 
-    const tableColumn = ["S.No.", "Transaction date", "Transaction No.", "Payment Type", "Company name", "Mobile Number", "Branch", "Kiosk", "Amount"];
+    const tableColumn = ["S.No.", "Transaction date", "Transaction No.", "Payment Type", "Status", "Company name", "Mobile Number", "Total Amount Due", "Total payment received", "Balance Amount"];
     const tableRows = visibleRows.map((row, index) => [
       index + 1,
-      row.TransactionDate,
+      formatDateTime(row.TransactionDate),
       row.TransactionReferenceNumber,
       row.PaymentTypeText,
+      row.Status == 1 || row.Status == "1" ? "Partial" : row.Status == 2 || row.Status == "2" ? "Completed" : row.Status || "",
       row.CompanyName,
       row.MobileNumber,
-      row.BranchEnglish,
-      row.KioskEnglish,
-      `AED ${row.TotalAmountDue}`
+      `AED ${row.TotalAmountDue}`,
+      `AED ${row.TotalPaymentReceived || 0}`,
+      `AED ${row.BalanceAmount || 0}`
     ]);
 
     const totalAmount = visibleRows.reduce((sum, row) => sum + row.TotalAmountDue, 0).toFixed(2);
+    const totalReceived = visibleRows.reduce((sum, row) => sum + (row.TotalPaymentReceived || 0), 0).toFixed(2);
+    const totalBalance = visibleRows.reduce((sum, row) => sum + (row.BalanceAmount || 0), 0).toFixed(2);
 
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
-      foot: [["", "", "", "", "", "", "Grand Total:", "", `AED ${totalAmount}`]],
+      foot: [["", "", "", "", "", "", "Grand Total:", `AED ${totalAmount}`, `AED ${totalReceived}`, `AED ${totalBalance}`]],
       startY: 20,
       styles: {
         font: isFontLoaded ? "ArabicFont" : "helvetica",
@@ -357,7 +362,7 @@ export default function TransactionReportPage() {
         halign: 'right'
       },
       didParseCell: (data) => {
-        if (data.column.index === 8 || data.column.index === 0) { // Amount and S.No.
+        if (data.column.index === 7 || data.column.index === 8 || data.column.index === 9 || data.column.index === 0) { // Amount, Received, Balance and S.No.
           data.cell.styles.halign = 'right';
         } else {
           data.cell.styles.halign = 'left';
@@ -379,14 +384,24 @@ export default function TransactionReportPage() {
 
   const CustomFooter = () => {
     const totalAmount = visibleRows.reduce((sum, row) => sum + (Number(row.TotalAmountDue) || 0), 0).toFixed(2);
+    const totalReceived = visibleRows.reduce((sum, row) => sum + (Number(row.TotalPaymentReceived) || 0), 0).toFixed(2);
+    const totalBalance = visibleRows.reduce((sum, row) => sum + (Number(row.BalanceAmount) || 0), 0).toFixed(2);
     return (
       <Box className="flex flex-row items-center justify-between py-2 px-4 surface-secondary border-t border-divider rounded-b-lg">
         <Box className="flex-grow">
           <GridPagination />
         </Box>
-        <Typography variant="h6" className="font-bold text-text-primary px-2 whitespace-nowrap">
-          Grand Total: <span className="text-primary">AED {totalAmount}</span>
-        </Typography>
+        <Box className="flex flex-col items-end">
+          <Typography variant="h6" className="font-bold text-text-primary px-2 whitespace-nowrap">
+            Grand Total: <span className="text-primary">AED {totalAmount}</span>
+          </Typography>
+          <Typography variant="body2" className="font-bold text-text-primary px-2 whitespace-nowrap">
+            Total Received: <span className="text-success">AED {totalReceived}</span>
+          </Typography>
+          <Typography variant="body2" className="font-bold text-text-secondary px-2 whitespace-nowrap">
+            Total Balance: <span className="text-error">AED {totalBalance}</span>
+          </Typography>
+        </Box>
       </Box>
     );
   };
@@ -396,43 +411,71 @@ export default function TransactionReportPage() {
       field: "serialNo",
       headerName: "S.No.",
       width: 100,
+      headerAlign: "center",
       renderCell: (params) => {
         const index = params.api.getAllRowIds().indexOf(params.id);
         return index + 1;
       },
     },
-    { field: "TransactionDate", headerName: "Transaction date", width: 220 },
-    { field: "TransactionReferenceNumber", headerName: "Transaction No.", width: 150 },
-    { field: "PaymentTypeText", headerName: "Payment Type", width: 150 },
-    { field: "CompanyName", headerName: "Company name", width: 180 },
-    { field: "MobileNumber", headerName: "Mobile Number", width: 150 },
-    { field: "BranchEnglish", headerName: "Branch", width: 150 },
-    { field: "KioskEnglish", headerName: "Kiosk", width: 150 },
+    { field: "TransactionDate", headerName: "Transaction date", width: 220, headerAlign: "center", renderCell: (params) => formatDateTime(params.value) },
+    { field: "TransactionReferenceNumber", headerName: "Transaction No.", width: 150, headerAlign: "center" },
+    { field: "PaymentTypeText", headerName: "Payment Type", width: 150, headerAlign: "center" },
+    {
+      field: "Status",
+      headerName: "Status",
+      width: 120,
+      headerAlign: "center",
+      renderCell: (params) => {
+        if (params.value === 1 || params.value === "1") return "Partial";
+        if (params.value === 2 || params.value === "2") return "Completed";
+        return params.value || "";
+      }
+    },
+    { field: "CompanyName", headerName: "Company name", width: 180, headerAlign: "center" },
+    { field: "MobileNumber", headerName: "Mobile Number", width: 150, headerAlign: "center" },
     {
       field: "TotalAmountDue",
-      headerName: "Amount",
+      headerName: "Total Amount Due",
       width: 120,
-      align: "right",
-      headerAlign: "right",
+      align: "left",
+      headerAlign: "center",
       renderCell: (params) => `AED ${params.value}`,
+    },
+    {
+      field: "TotalPaymentReceived",
+      headerName: "Total payment received",
+      width: 160,
+      align: "left",
+      headerAlign: "center",
+      renderCell: (params) => `AED ${params.value || 0}`,
+    },
+    {
+      field: "BalanceAmount",
+      headerName: "Balance Amount",
+      width: 120,
+      align: "left",
+      headerAlign: "center",
+      renderCell: (params) => `AED ${params.value || 0}`,
     },
     {
       field: "actions",
       headerName: "Order Details",
       type: "actions",
       width: 100,
+      align: "left",
+      headerAlign: "center",
       getActions: (params) => {
         const actions = [];
-        if (canRead) {
-          actions.push(
-            <GridActionsCellItem
-              key="view"
-              icon={<NiEyeOpen size="medium" />}
-              label="View Details"
-              onClick={() => handleViewDetails(params.id as number)}
-            />
-          );
-        }
+        // if (canRead) {
+        actions.push(
+          <GridActionsCellItem
+            key="view"
+            icon={<NiEyeOpen size="medium" />}
+            label="View Details"
+            onClick={() => handleViewDetails(params.id as number)}
+          />
+        );
+        //}
         return actions;
       },
     },
@@ -598,35 +641,21 @@ export default function TransactionReportPage() {
                     ),
                   }}
                 />
-                <FormControl size="small" className="w-48">
-                  <InputLabel>Branch</InputLabel>
-                  <Select
-                    value={branchId}
-                    label="Branch"
-                    onChange={(e) => setBranchId(e.target.value)}
-                  >
-                    <MenuItem value="All">All</MenuItem>
-                    {branches.map((b) => (
-                      <MenuItem key={b.TableID} value={b.TableID}>{b.TitleEnglish}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <FormControl size="small" className="w-48">
-                  <InputLabel>Kiosk</InputLabel>
-                  <Select
-                    value={kioskId}
-                    label="Kiosk"
-                    onChange={(e) => setKioskId(e.target.value)}
-                  >
-                    <MenuItem value="All">All</MenuItem>
-                    {kiosks.map((k) => (
-                      <MenuItem key={k.TableID} value={k.TableID}>{k.TitleEnglish}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
               </Box>
 
               <Box className="flex flex-row items-center justify-end gap-3 w-full">
+                <FormControl size="small" className="w-48">
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    value={statusFilter}
+                    label="Status"
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <MenuItem value="All">All Transaction</MenuItem>
+                    <MenuItem value="1">Partial Transaction</MenuItem>
+                    <MenuItem value="2">Completed Transaction</MenuItem>
+                  </Select>
+                </FormControl>
                 <FormControl size="small" className="w-48">
                   <InputLabel>Payment Type</InputLabel>
                   <Select
@@ -756,6 +785,34 @@ export default function TransactionReportPage() {
           <DialogContent className="surface-standard px-0 pb-0">
             {selectedTransaction && (
               <Box className="flex flex-col gap-0">
+                {/* 0) General Information Section */}
+                <Box className="px-6 py-4 bg-slate-50 border-b border-divider">
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                      <Typography variant="caption" className="text-text-secondary block">Transaction Date</Typography>
+                      <Typography variant="body2" className="font-medium text-text-primary">{selectedTransaction.TransactionDate}</Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                      <Typography variant="caption" className="text-text-secondary block">Transaction No.</Typography>
+                      <Typography variant="body2" className="font-medium text-text-primary">{selectedTransaction.TransactionReferenceNumber}</Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                      <Typography variant="caption" className="text-text-secondary block">Status</Typography>
+                      <Typography variant="body2" className="font-medium text-text-primary">
+                        {selectedTransaction.Status == 1 || selectedTransaction.Status == "1" ? "Partial" : selectedTransaction.Status == 2 || selectedTransaction.Status == "2" ? "Completed" : selectedTransaction.Status || ""}
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                      <Typography variant="caption" className="text-text-secondary block">Branch</Typography>
+                      <Typography variant="body2" className="font-medium text-text-primary">{selectedTransaction.BranchEnglish}</Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                      <Typography variant="caption" className="text-text-secondary block">Kiosk</Typography>
+                      <Typography variant="body2" className="font-medium text-text-primary">{selectedTransaction.KioskEnglish}</Typography>
+                    </Grid>
+                  </Grid>
+                </Box>
+
                 {/* 1) Sales Order Section */}
                 <Box className="px-6 py-4 bg-white border-b border-divider">
                   <Box className="flex items-center gap-2 mb-4">
@@ -796,107 +853,8 @@ export default function TransactionReportPage() {
                   </Box>
                 </Box>
 
-
-                {/* 2) Cash Transaction Section */}
+                {/* 2) Payment Details Section */}
                 <Box className="px-6 py-4 bg-white border-b border-divider">
-                  <Box className="flex items-center gap-2 mb-4">
-                    <NiDocumentChart size="medium" className="text-primary" />
-                    <Typography variant="h6" className="font-bold text-text-primary">
-                      Cash Transaction
-                    </Typography>
-                  </Box>
-                  <Box className="border border-divider rounded-xl overflow-hidden shadow-tiny">
-                    <table className="w-full text-left text-sm border-collapse">
-                      <thead className="surface-secondary font-bold text-text-secondary uppercase text-[10px] tracking-wider">
-                        <tr>
-                          <th className="px-4 py-3 border-b border-divider">S.No</th>
-                          <th className="px-4 py-3 border-b border-divider">Currency</th>
-                          <th className="px-4 py-3 border-b border-divider">Count</th>
-                          <th className="px-4 py-3 border-b border-divider text-right">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white">
-                        {DENOMINATIONS.map((denom, idx) => (
-                          <tr key={denom} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-4 py-3 border-b border-divider/50">{idx + 1}</td>
-                            <td className="px-4 py-3 border-b border-divider/50 font-medium">{denom} AED</td>
-                            <td className="px-4 py-3 border-b border-divider/50">
-                              <Typography variant="body2" className="text-gray-800 font-medium">
-                                {cashTransactions[denom] || 0}
-                              </Typography>
-                            </td>
-                            <td className="px-4 py-3 border-b border-divider/50 text-right font-semibold">
-                              AED {(cashTransactions[denom] || 0) * denom}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot className="surface-secondary">
-                        <tr className="font-bold">
-                          <td colSpan={2} className="px-4 py-3 text-right text-text-secondary font-bold uppercase text-[10px]">Grand Total</td>
-                          <td className="px-4 py-3 text-primary text-base">
-                            {Object.values(cashTransactions).reduce((a, b) => a + b, 0)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-primary text-base">
-                            AED {DENOMINATIONS.reduce((acc, d) => acc + (cashTransactions[d] || 0) * d, 0).toLocaleString()}
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </Box>
-                </Box>
-
-                {/* 3) Cash Payout Section */}
-                <Box className="px-6 py-4 bg-white border-b border-divider">
-                  <Box className="flex items-center gap-2 mb-4">
-                    <NiArrowInDown size="medium" className="text-primary" />
-                    <Typography variant="h6" className="font-bold text-text-primary">
-                      Cash Payout
-                    </Typography>
-                  </Box>
-                  <Box className="border border-divider rounded-xl overflow-hidden shadow-tiny">
-                    <table className="w-full text-left text-sm border-collapse">
-                      <thead className="surface-secondary font-bold text-text-secondary uppercase text-[10px] tracking-wider">
-                        <tr>
-                          <th className="px-4 py-3 border-b border-divider">S.No</th>
-                          <th className="px-4 py-3 border-b border-divider">Currency</th>
-                          <th className="px-4 py-3 border-b border-divider">Count</th>
-                          <th className="px-4 py-3 border-b border-divider text-right">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white">
-                        {DENOMINATIONS.map((denom, idx) => (
-                          <tr key={denom} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-4 py-3 border-b border-divider/50">{idx + 1}</td>
-                            <td className="px-4 py-3 border-b border-divider/50 font-medium">{denom} AED</td>
-                            <td className="px-4 py-3 border-b border-divider/50">
-                              <Typography variant="body2" className="text-gray-800 font-medium">
-                                {cashPayouts[denom] || 0}
-                              </Typography>
-                            </td>
-                            <td className="px-4 py-3 border-b border-divider/50 text-right font-semibold">
-                              AED {(cashPayouts[denom] || 0) * denom}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot className="surface-secondary">
-                        <tr className="font-bold">
-                          <td colSpan={2} className="px-4 py-3 text-right text-text-secondary font-bold uppercase text-[10px]">Grand Total</td>
-                          <td className="px-4 py-3 text-primary text-base">
-                            {Object.values(cashPayouts).reduce((a, b) => a + b, 0)}
-                          </td>
-                          <td className="px-4 py-3 text-right text-primary text-base">
-                            AED {DENOMINATIONS.reduce((acc, d) => acc + (cashPayouts[d] || 0) * d, 0).toLocaleString()}
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </Box>
-                </Box>
-
-                {/* 4) Payment Details Section */}
-                <Box className="px-6 py-4 bg-white">
                   <Box className="flex items-center gap-2 mb-4">
                     <NiPrinter size="medium" className="text-primary" />
                     <Typography variant="h6" className="font-bold text-text-primary">
@@ -909,8 +867,10 @@ export default function TransactionReportPage() {
                         <tr>
                           <th className="px-4 py-3 border-b border-divider">S.No</th>
                           <th className="px-4 py-3 border-b border-divider">Type</th>
-                          <th className="px-4 py-3 border-b border-divider"></th>
-                          <th className="px-4 py-3 border-b border-divider"></th>
+                          <th className="px-4 py-3 border-b border-divider">Transaction Date/Time</th>
+                          <th className="px-4 py-3 border-b border-divider">Source ID</th>
+                          <th className="px-4 py-3 border-b border-divider">Receipt No.</th>
+                          <th className="px-4 py-3 border-b border-divider">Card Details</th>
                           <th className="px-4 py-3 border-b border-divider text-right">Amount</th>
                         </tr>
                       </thead>
@@ -919,21 +879,147 @@ export default function TransactionReportPage() {
                           <tr key={idx} className="hover:bg-slate-50 transition-colors">
                             <td className="px-4 py-3 border-b border-divider/50">{idx + 1}</td>
                             <td className="px-4 py-3 border-b border-divider/50 text-text-secondary">{txn.PaymentTypeText}</td>
-                            <td className="px-4 py-3 border-b border-divider/50"></td>
-                            <td className="px-4 py-3 border-b border-divider/50"></td>
+                            <td className="px-4 py-3 border-b border-divider/50 text-text-secondary">{txn.TransactionDate ? formatDateTime(txn.TransactionDate) : '-'}</td>
+                            <td className="px-4 py-3 border-b border-divider/50 text-text-secondary">{txn.SourceID || '-'}</td>
+                            <td className="px-4 py-3 border-b border-divider/50 text-text-secondary">{txn.ReceiptNumber || '-'}</td>
+                            <td className="px-4 py-3 border-b border-divider/50 text-text-secondary">
+                              {txn.PaymentType !== 1 && txn.CardInformation ? (
+                                <Box className="text-[10px] leading-tight">
+                                  {Object.entries(txn.CardInformation).map(([key, value]) => (
+                                    <Box key={key} className="flex gap-1">
+                                      <span className="font-bold">{key}:</span>
+                                      <span>{String(value)}</span>
+                                    </Box>
+                                  ))}
+                                </Box>
+                              ) : '-'}
+                            </td>
                             <td className="px-4 py-3 border-b border-divider/50 text-right font-semibold">AED {txn.AmountPaid}</td>
                           </tr>
                         ))}
                       </tbody>
                       <tfoot className="surface-secondary">
+                        <tr className="font-bold border-b border-divider/20">
+                          <td colSpan={6} className="px-4 py-2 text-right text-text-secondary">Total Amount Due</td>
+                          <td className="px-4 py-2 text-right text-text-primary">AED {selectedTransaction.TotalAmountDue}</td>
+                        </tr>
+                        <tr className="font-bold border-b border-divider/20">
+                          <td colSpan={6} className="px-4 py-2 text-right text-text-secondary">Total payment received</td>
+                          <td className="px-4 py-2 text-right text-success">AED {selectedTransaction.payments?.reduce((sum, p) => sum + (parseFloat(p.AmountPaid.toString().replace(/,/g, '')) || 0), 0).toFixed(2)}</td>
+                        </tr>
                         <tr className="font-bold">
-                          <td colSpan={4} className="px-4 py-3 pr-8 text-right text-text-secondary"></td>
-                          <td className="px-4 py-3 text-right text-primary text-base"><span className="text-text-secondary" style={{ marginRight: "15px" }}>Grand Total</span> AED {selectedTransaction.TotalAmountDue}</td>
+                          <td colSpan={6} className="px-4 py-2 text-right text-text-secondary">Balance Amount</td>
+                          <td className="px-4 py-2 text-right text-error">AED {selectedTransaction.BalanceAmount || 0}</td>
                         </tr>
                       </tfoot>
                     </table>
                   </Box>
                 </Box>
+
+
+                {/* 2) Cash Transaction Section */}
+                {selectedTransaction.cash_transactions && selectedTransaction.cash_transactions.length > 0 && (
+                  <Box className="px-6 py-4 bg-white border-b border-divider">
+                    <Box className="flex items-center gap-2 mb-4">
+                      <NiDocumentChart size="medium" className="text-primary" />
+                      <Typography variant="h6" className="font-bold text-text-primary">
+                        Cash Transaction
+                      </Typography>
+                    </Box>
+                    <Box className="border border-divider rounded-xl overflow-hidden shadow-tiny">
+                      <table className="w-full text-left text-sm border-collapse">
+                        <thead className="surface-secondary font-bold text-text-secondary uppercase text-[10px] tracking-wider">
+                          <tr>
+                            <th className="px-4 py-3 border-b border-divider">S.No</th>
+                            <th className="px-4 py-3 border-b border-divider">Currency</th>
+                            <th className="px-4 py-3 border-b border-divider">Count</th>
+                            <th className="px-4 py-3 border-b border-divider text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white">
+                          {selectedTransaction.cash_transactions.map((item, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-4 py-3 border-b border-divider/50">{item.SNo || idx + 1}</td>
+                              <td className="px-4 py-3 border-b border-divider/50 font-medium">{item.Currency}</td>
+                              <td className="px-4 py-3 border-b border-divider/50">
+                                <Typography variant="body2" className="text-gray-800 font-medium">
+                                  {item.Count}
+                                </Typography>
+                              </td>
+                              <td className="px-4 py-3 border-b border-divider/50 text-right font-semibold">
+                                {typeof item.Amount === 'number' ? `AED ${item.Amount.toFixed(2)}` : item.Amount}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot className="surface-secondary">
+                          <tr className="font-bold">
+                            <td colSpan={2} className="px-4 py-3 text-right text-text-secondary font-bold uppercase text-[10px]">Grand Total</td>
+                            <td className="px-4 py-3 text-primary text-base">
+                              {selectedTransaction.cash_summary?.TotalCount || 0}
+                            </td>
+                            <td className="px-4 py-3 text-right text-primary text-base">
+                              {selectedTransaction.cash_summary?.TotalAmount || "AED 0.00"}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </Box>
+                  </Box>
+                )}
+
+                {/* 4) Cash Payout Section */}
+                {selectedTransaction.cash_payout && selectedTransaction.cash_payout.length > 0 && (
+                  <Box className="px-6 py-4 bg-white">
+                    <Box className="flex items-center gap-2 mb-4">
+                      <NiArrowInDown size="medium" className="text-primary" />
+                      <Typography variant="h6" className="font-bold text-text-primary">
+                        Cash Payout
+                      </Typography>
+                    </Box>
+                    <Box className="border border-divider rounded-xl overflow-hidden shadow-tiny">
+                      <table className="w-full text-left text-sm border-collapse">
+                        <thead className="surface-secondary font-bold text-text-secondary uppercase text-[10px] tracking-wider">
+                          <tr>
+                            <th className="px-4 py-3 border-b border-divider">S.No</th>
+                            <th className="px-4 py-3 border-b border-divider">Currency</th>
+                            <th className="px-4 py-3 border-b border-divider">Count</th>
+                            <th className="px-4 py-3 border-b border-divider text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white">
+                          {selectedTransaction.cash_payout.map((item, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-4 py-3 border-b border-divider/50">{item.SNo || idx + 1}</td>
+                              <td className="px-4 py-3 border-b border-divider/50 font-medium">{item.Currency}</td>
+                              <td className="px-4 py-3 border-b border-divider/50">
+                                <Typography variant="body2" className="text-gray-800 font-medium">
+                                  {item.Count}
+                                </Typography>
+                              </td>
+                              <td className="px-4 py-3 border-b border-divider/50 text-right font-semibold">
+                                {typeof item.Amount === 'number' ? `AED ${item.Amount.toFixed(2)}` : item.Amount}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot className="surface-secondary">
+                          <tr className="font-bold">
+                            <td colSpan={2} className="px-4 py-3 text-right text-text-secondary font-bold uppercase text-[10px]">Grand Total</td>
+                            <td className="px-4 py-3 text-primary text-base">
+                              {selectedTransaction.cash_payout_summary?.TotalCount || 0}
+                            </td>
+                            <td className="px-4 py-3 text-right text-primary text-base">
+                              {selectedTransaction.cash_payout_summary?.TotalAmount || "AED 0.00"}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </Box>
+                  </Box>
+                )}
+
+
               </Box>
             )}
           </DialogContent>

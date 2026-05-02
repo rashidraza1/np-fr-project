@@ -285,38 +285,28 @@ export default function Page() {
   };
 
   const columns: GridColDef<Row>[] = [
-    { field: "id", headerName: "ID", width: 90, filterable: false },
+    { field: "id", headerName: "ID", width: 90, filterable: false, align: "center", headerAlign: "center" },
     {
       field: "departmentName",
-      headerName: "Title Name",
+      headerName: "Title",
       flex: 1,
       minWidth: 150,
+      align: "left",
+      headerAlign: "center",
       renderCell: (params: GridRenderCellParams<any, string>) => (
-        <Box className="flex h-full items-center">
-          <Typography variant="body2" className="text-text-primary">
+        <Box className="flex h-full items-center justify-start w-full">
+          <Typography variant="body2" className="text-text-primary text-left">
             {params.value}
           </Typography>
         </Box>
       ),
     },
-    {
-      field: "departmentNameArabic",
-      headerName: "Title Name (Arabic)",
-      flex: 1,
-      minWidth: 150,
-      renderCell: (params: GridRenderCellParams<any, string>) => (
-        <Box className="flex h-full items-center">
-          <Typography variant="body2" className="text-text-primary">
-            {params.value}
-          </Typography>
-        </Box>
-      ),
-    },
+
     {
       field: "status",
       headerName: "Status",
-      align: "left",
-      headerAlign: "left",
+      align: "center",
+      headerAlign: "center",
       width: 100,
       type: "singleSelect",
       valueOptions: ["Active", "Inactive"],
@@ -366,17 +356,6 @@ export default function Page() {
               label="Edit"
               showInMenu
               onClick={() => navigate(`/master-setups/departments/edit/${params.id}`, { state: params.row })}
-            />
-          );
-        }
-        if (canDelete) {
-          actions.push(
-            <GridActionsCellItem
-              key={0}
-              icon={<NiCrossSquare size="medium" />}
-              label="Delete"
-              showInMenu
-              onClick={() => confirmDelete(params.id as string)}
             />
           );
         }
@@ -458,16 +437,6 @@ export default function Page() {
                     <NiDuplicate size="medium" />
                   </ListItemIcon>
                   <ListItemText>Duplicate</ListItemText>
-                </MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    handleCloseSelection();
-                  }}
-                >
-                  <ListItemIcon>
-                    <NiCrossSquare size="medium" />
-                  </ListItemIcon>
-                  <ListItemText>Delete</ListItemText>
                 </MenuItem>
               </Menu>
             </>

@@ -2,8 +2,21 @@ export interface Env {
   // If you have D1 configured later, it would go here. e.g. DB: D1Database;
 }
 
+interface Staff {
+  id: number;
+  FullName: string;
+  Email: string;
+  EmpCode: string;
+  PIN: string;
+  Status: string;
+  CreatedBy: string;
+  CreationDateTime: string;
+  ModifiedBy: string | null;
+  ModificationDateTime: string | null;
+}
+
 // Mock database for ps_staffregistration
-let staffData = [
+let staffData: Staff[] = [
   {
     id: 1,
     FullName: "John Doe",
@@ -20,7 +33,7 @@ let staffData = [
 let nextId = 2;
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, _env: Env): Promise<Response> {
     const url = new URL(request.url);
 
     // Add CORS headers for local development if needed
@@ -64,7 +77,7 @@ export default {
       if (request.method === "POST") {
         try {
           const body = await request.json() as any;
-          const newStaff = {
+          const newStaff: Staff = {
             id: nextId++,
             FullName: body.FullName,
             Email: body.Email,

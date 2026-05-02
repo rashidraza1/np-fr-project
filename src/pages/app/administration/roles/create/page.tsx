@@ -35,8 +35,7 @@ export default function CreateRolePage() {
     const [loading, setLoading] = useState(false);
 
     const validationSchema = yup.object({
-        groupName: yup.string().trim().required("Title Name (English) is required"),
-        titleNameAr: yup.string().trim().required("Title Name (Arabic) is required"),
+        groupName: yup.string().trim().required("Title is required"),
         status: yup.string().oneOf(["Active", "Inactive"]),
     });
 
@@ -45,7 +44,6 @@ export default function CreateRolePage() {
     const formik = useFormik({
         initialValues: {
             groupName: "",
-            titleNameAr: "",
             status: "Active",
         },
         validationSchema: validationSchema,
@@ -83,7 +81,7 @@ export default function CreateRolePage() {
                     body: JSON.stringify({
                         Trigger: "add",
                         TitleEnglish: values.groupName,
-                        TitleArabic: values.titleNameAr,
+                        TitleArabic: values.groupName,
                         IsActive: values.status === "Active" ? 1 : 0,
                         UserID: userId,
                     }),
@@ -158,7 +156,7 @@ export default function CreateRolePage() {
 
                             <form onSubmit={formik.handleSubmit}>
                                 <Grid container spacing={2} alignItems="center">
-                                    <Grid size={{ xs: 12, md: 4 }}>
+                                    <Grid size={{ xs: 12, md: 8 }}>
                                         <FormControl
                                             className="outlined"
                                             variant="standard"
@@ -167,10 +165,10 @@ export default function CreateRolePage() {
                                             error={formik.touched.groupName && Boolean(formik.errors.groupName)}
                                         >
                                             <FormLabel component="label">
-                                                Title Name (English) <span className="text-red-500">*</span>
+                                                Title <span className="text-red-500">*</span>
                                             </FormLabel>
                                             <Input
-                                                placeholder="Title Name (English)"
+                                                placeholder="Title"
                                                 id="groupName"
                                                 name="groupName"
                                                 value={formik.values.groupName}
@@ -184,33 +182,7 @@ export default function CreateRolePage() {
                                             )}
                                         </FormControl>
                                     </Grid>
-                                    <Grid size={{ xs: 12, md: 4 }}>
-                                        <FormControl
-                                            className="outlined"
-                                            variant="standard"
-                                            size="small"
-                                            fullWidth
-                                            error={formik.touched.titleNameAr && Boolean(formik.errors.titleNameAr)}
-                                        >
-                                            <FormLabel component="label">
-                                                Title Name (Arabic) <span className="text-red-500">*</span>
-                                            </FormLabel>
-                                            <Input
-                                                placeholder="Title Name (Arabic)"
-                                                id="titleNameAr"
-                                                name="titleNameAr"
-                                                value={formik.values.titleNameAr}
-                                                onChange={formik.handleChange}
-                                                onBlur={formik.handleBlur}
-                                                dir="rtl"
-                                            />
-                                            {formik.touched.titleNameAr && formik.errors.titleNameAr && (
-                                                <Typography variant="caption" color="error" className="mt-1">
-                                                    {formik.errors.titleNameAr}
-                                                </Typography>
-                                            )}
-                                        </FormControl>
-                                    </Grid>
+
                                     <Grid size={{ xs: 12, md: 4 }}>
                                         <FormControl fullWidth size="small" className="mb-0">
                                             <FormLabel component="label" className="mb-2 block">

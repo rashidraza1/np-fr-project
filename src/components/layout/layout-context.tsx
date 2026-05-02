@@ -67,7 +67,7 @@ function useLayoutContextValue() {
             if (item.children) {
               const visibleChildren = item.children.filter((child) => {
                 if (child.hideInMenu) return true; // Keep hidden items locally, but permission might still be checked
-                if (child.id === "staff" || child.id === "email-config" || child.id === "staff-action") return true; // Bypass permission check for staff, email config and staff action
+                if (child.id === "staff" || child.id === "email-config" || child.id === "staff-action" || child.id === "partial-transaction" || child.id === "completed-transaction" || child.id === "transaction") return true; // Bypass permission check
 
                 const apiFeature = apiModule.Features.find((f: any) => f.FeatureTitleEnglish === child.label);
                 return apiFeature && apiFeature.ReadPermission === 1;
@@ -97,7 +97,7 @@ function useLayoutContextValue() {
 
   // Stabilize validatePermission with useCallback to prevent infinite effect loops
   const validatePermission = useCallback((path: string): boolean => {
-    if (path === "/dashboard" || path === "/" || path === "/404" || path.startsWith("/chat-bot") || path.startsWith("/survey") || path.startsWith("/master-setups/staff") || path.startsWith("/master-setups/email-config") || path.startsWith("/master-setups/staff-action")) return true;
+    if (path === "/dashboard" || path === "/" || path === "/404" || path.startsWith("/chat-bot") || path.startsWith("/survey") || path.startsWith("/master-setups/staff") || path.startsWith("/master-setups/email-config") || path.startsWith("/master-setups/staff-action") || path.startsWith("/reports/partial-transaction") || path.startsWith("/reports/completed-transaction") || path.startsWith("/reports/transaction")) return true;
 
     // Helper to find item in a tree
     const findItem = (items: MenuItem[]): MenuItem | undefined => {
